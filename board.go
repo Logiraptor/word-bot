@@ -6,10 +6,16 @@ import (
 	"github.com/fatih/color"
 )
 
-type Letter = int
-type Bonus = byte
+type Tile int
+type Letter int
 type Direction bool
-type Score = int
+type Score int
+type Bonus = Score
+type Word []Letter
+
+const NoTile = -1
+const BlankTileBit = 1 << 10
+const LetterMask = 1<<7 - 1
 
 const (
 	Vertical   Direction = true
@@ -33,13 +39,13 @@ const (
 )
 
 type PlacedWord struct {
-	word      []Letter
+	word      []Tile
 	row, col  int
 	direction Direction
 }
 
 func (p PlacedWord) String() string {
-	word := letters2Word(p.word)
+	word := tiles2String(p.word)
 	return fmt.Sprintf("(%d,%d,%v: %s)", p.row, p.col, p.direction, word)
 }
 
@@ -55,6 +61,24 @@ func (d Direction) Offsets() (dRow, dCol int) {
 		return 0, 1
 	}
 	return 1, 0
+}
+
+func (t Tile) PointValue() Score {
+	if t.IsBlank() {
+		return 0
+	}
+	return letterValues[t]
+}
+
+func (t Tile) IsBlank() bool {
+	return t&BlankTileBit != 0
+}
+
+func (t Tile) ToLetter() Letter {
+	if t.IsBlank() {
+		return Letter(t & LetterMask)
+	}
+	return Letter(t & LetterMask)
 }
 
 var normalBonus [15][15]Bonus = [...][15]Bonus{
@@ -76,9 +100,8 @@ var normalBonus [15][15]Bonus = [...][15]Bonus{
 }
 
 type Cell struct {
-	bonus    Bonus
-	value    Letter
-	adjacent bool
+	bonus Bonus
+	tile  Tile
 }
 
 type Board struct {
@@ -89,16 +112,16 @@ func NewBoard() *Board {
 	b := new(Board)
 	for i, row := range b.cells {
 		for j := range row {
-			b.cells[i][j].value = -1
+			b.cells[i][j].tile = NoTile
 			b.cells[i][j].bonus = normalBonus[i][j]
 		}
 	}
 	return b
 }
 
-func (b *Board) Score(word string, row, col int, direction Direction) Score {
+func (b *Board) Score(word []Tile, row, col int, direction Direction) Score {
 	words := b.FindNewWords(word, row, col, direction)
-	total := 0
+	total := Score(0)
 	for _, word := range words {
 		wordScore := b.scoreWord(word.word, word.row, word.col, word.direction)
 		total += wordScore
@@ -106,13 +129,13 @@ func (b *Board) Score(word string, row, col int, direction Direction) Score {
 	return total
 }
 
-func (b *Board) scoreWord(word []Letter, row, col int, direction Direction) Score {
+func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score {
 	dRow, dCol := direction.Offsets()
-	var sum = 0
-	wordBonus := 1
+	sum := Bonus(0)
+	wordBonus := Bonus(1)
 	for i, letter := range word {
-		letterBonus := 1
-		if b.cells[row+(i*dRow)][col+(i*dCol)].value == -1 {
+		letterBonus := Bonus(1)
+		if b.cells[row+(i*dRow)][col+(i*dCol)].tile == NoTile {
 			bonus := b.cells[row+(i*dRow)][col+(i*dCol)].bonus
 			switch bonus {
 			case DoubleLetter:
@@ -125,24 +148,24 @@ func (b *Board) scoreWord(word []Letter, row, col int, direction Direction) Scor
 				wordBonus *= 2
 			}
 		}
-		sum += letterValues[letter] * letterBonus
+		sum += letter.PointValue() * letterBonus
 	}
 	return sum * wordBonus
 }
 
-func (b *Board) FindNewWords(word string, row, col int, direction Direction) []PlacedWord {
+func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []PlacedWord {
 	dRow, dCol := direction.Offsets()
 	words := []PlacedWord{}
-	wordLetters := make([]Letter, len(word))
+	wordLetters := make([]Tile, len(word))
 
 	for i, letter := range word {
-		if b.cells[row+(dRow*i)][col+(dCol*i)].value == -1 {
+		if b.cells[row+(dRow*i)][col+(dCol*i)].tile == NoTile {
 			subWord, ok := b.GrowWord(letter, row+(dRow*i), col+(dCol*i), !direction)
 			if ok {
 				words = append(words, subWord)
 			}
 		}
-		wordLetters[i] = letter2Token(letter)
+		wordLetters[i] = letter
 	}
 
 	// Grow placed word
@@ -161,12 +184,12 @@ func (b *Board) FindNewWords(word string, row, col int, direction Direction) []P
 	return words
 }
 
-func (b *Board) GrowWord(r rune, row, col int, dir Direction) (PlacedWord, bool) {
+func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool) {
 	dRow, dCol := dir.Offsets()
 
 	lhs := b.scan(row-dRow, col-dCol, -dRow, -dCol)
 	rhs := b.scan(row+dRow, col+dCol, dRow, dCol)
-	word := append(append(lhs, letter2Token(r)), rhs...)
+	word := append(append(lhs, l), rhs...)
 
 	return PlacedWord{
 		col:       col - len(lhs),
@@ -176,11 +199,11 @@ func (b *Board) GrowWord(r rune, row, col int, dir Direction) (PlacedWord, bool)
 	}, len(word) > 1
 }
 
-func (b *Board) PlaceTiles(word string, row, col int, direction Direction) {
+func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) {
 	dRow, dCol := direction.Offsets()
 
-	for i, letter := range word {
-		b.cells[row+i*dRow][col+i*dCol].value = letter2Token(letter)
+	for i, tile := range tiles {
+		b.cells[row+i*dRow][col+i*dCol].tile = tile
 	}
 }
 
@@ -190,8 +213,8 @@ func (b *Board) Print() {
 			_, _ = i, j
 
 			letter := ' '
-			if cell.value > -1 {
-				letter = token2Letter(cell.value)
+			if cell.tile != NoTile {
+				letter = tile2Rune(cell.tile)
 			}
 			cellColor := color.New(color.FgBlack)
 
@@ -214,30 +237,62 @@ func (b *Board) Print() {
 	}
 }
 
-func (b *Board) scan(row, col, dRow, dCol int) []Letter {
-	letters := []Letter{}
+func (b *Board) scan(row, col, dRow, dCol int) []Tile {
+	letters := []Tile{}
 	for col > 0 && col < 15 &&
 		row > 0 && row < 15 &&
-		b.cells[row][col].value != -1 {
-		letters = append(letters, b.cells[row][col].value)
+		b.cells[row][col].tile != NoTile {
+		letters = append(letters, b.cells[row][col].tile)
 		row += dRow
 		col += dCol
 	}
 	return letters
 }
 
-func letter2Token(r rune) Letter {
-	return int(r - 'a')
+func rune2Letter(r rune) Letter {
+	return Letter(r - 'a')
 }
 
-func token2Letter(t Letter) rune {
+func rune2Tile(r rune, blank bool) Tile {
+	return letter2Tile(rune2Letter(r), blank)
+}
+
+func letter2Tile(l Letter, blank bool) Tile {
+	if blank {
+		return Tile(l | BlankTileBit)
+	}
+	return Tile(l)
+}
+
+func letter2Rune(t Letter) rune {
 	return rune(t + 'a')
 }
 
-func letters2Word(letters []Letter) string {
+func tile2Rune(t Tile) rune {
+	return letter2Rune(t.ToLetter())
+}
+
+func tiles2String(tiles []Tile) string {
 	word := ""
-	for _, l := range letters {
-		word += string(token2Letter(l))
+	for _, l := range tiles {
+		word += string(tile2Rune(l))
 	}
 	return word
+}
+
+func MakeWord(word string) Word {
+	output := make(Word, len(word))
+	for i, r := range word {
+		output[i] = rune2Letter(r)
+	}
+	return output
+}
+
+// MakeTiles should be used like: MakeTiles(word, "xx x")
+func MakeTiles(word Word, mask string) []Tile {
+	output := make([]Tile, len(word))
+	for i, letter := range word {
+		output[i] = letter2Tile(letter, mask[i] == ' ')
+	}
+	return output
 }

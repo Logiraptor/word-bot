@@ -26,8 +26,8 @@ func main() {
 	}
 
 	board := NewBoard()
-	board.PlaceTiles("hello", 7, 7, Horizontal)
-	board.PlaceTiles("hello", 7, 7, Vertical)
+	board.PlaceTiles(MakeTiles(MakeWord("hello"), "xxxxx"), 7, 7, Horizontal)
+	board.PlaceTiles(MakeTiles(MakeWord("hello"), "xxxxx"), 7, 7, Vertical)
 	board.Print()
 }
 

@@ -15,7 +15,7 @@ var letters = struct {
 // (8 points)- J, X
 // (10 points)-Q, Z
 
-var letterValues [26]int
+var letterValues [26]Score
 
 func init() {
 	letterValues[letters.A] = 1

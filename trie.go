@@ -12,7 +12,7 @@ func NewTrie() *Trie {
 func (t *Trie) Contains(word string) bool {
 	current := t
 	for _, letter := range word {
-		i := letter2Token(letter)
+		i := rune2Letter(letter)
 		if current.nodes[i] == nil {
 			return false
 		}
@@ -24,7 +24,7 @@ func (t *Trie) Contains(word string) bool {
 func (t *Trie) AddWord(word string) {
 	current := t
 	for _, letter := range word {
-		i := letter2Token(letter)
+		i := rune2Letter(letter)
 		if current.nodes[i] == nil {
 			current.nodes[i] = NewTrie()
 		}
