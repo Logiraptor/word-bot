@@ -145,8 +145,16 @@ func (b *Board) FindNewWords(word string, row, col int, direction Direction) []P
 		wordLetters[i] = letter2Token(letter)
 	}
 
+	// Grow placed word
+	lhs := b.scan(row-dRow, col-dCol, -dRow, -dCol)
+	rhs := b.scan(
+		row+dRow*len(wordLetters),
+		col+dCol*len(wordLetters),
+		dRow, dCol)
+	wordLetters = append(append(lhs, wordLetters...), rhs...)
+
 	words = append(words, PlacedWord{
-		col: col, row: row,
+		col: col - dCol*len(lhs), row: row - dRow*len(lhs),
 		direction: direction, word: wordLetters,
 	})
 

@@ -37,3 +37,9 @@ func TestMultiWord(t *testing.T) {
 	// 3 for oa
 	assertScore(t, b, 21, "bob", 6, 7, Horizontal)
 }
+
+func TestPlacingJustAnS(t *testing.T) {
+	b := NewBoard()
+	b.PlaceTiles("dog", 7, 7, Horizontal)
+	assertScore(t, b, 6, "s", 7, 10, Horizontal)
+}
