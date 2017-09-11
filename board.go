@@ -119,6 +119,49 @@ func NewBoard() *Board {
 	return b
 }
 
+func (b *Board) HasTile(row, col int) bool {
+	if row <= 0 || row >= 15 ||
+		col <= 0 || col >= 15 {
+		return false
+	}
+	return b.cells[row][col].tile != NoTile
+}
+
+func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction) bool {
+
+	// Check that it connects to other words
+	connectsToOtherWords := false
+	dRow, dCol := direction.Offsets()
+	for i := 0; i < len(word); i++ {
+		tileRow, tileCol := row+dRow*i, col+dCol*i
+
+		if tileRow >= 15 || tileCol >= 15 {
+			return false
+		}
+
+		if b.HasTile(tileRow-1, tileCol) ||
+			b.HasTile(tileRow+1, tileCol) ||
+			b.HasTile(tileRow, tileCol-1) ||
+			b.HasTile(tileRow, tileCol+1) {
+			connectsToOtherWords = true
+		} else if tileRow == 7 && tileCol == 7 {
+			connectsToOtherWords = true
+		}
+	}
+
+	if !connectsToOtherWords {
+		return false
+	}
+
+	words := b.FindNewWords(word, row, col, direction)
+	for _, word := range words {
+		if !wordDB.Contains(tiles2Word(word.word)) {
+			return false
+		}
+	}
+	return true
+}
+
 func (b *Board) Score(word []Tile, row, col int, direction Direction) Score {
 	words := b.FindNewWords(word, row, col, direction)
 	total := Score(0)
@@ -135,7 +178,7 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 	wordBonus := Bonus(1)
 	for i, letter := range word {
 		letterBonus := Bonus(1)
-		if b.cells[row+(i*dRow)][col+(i*dCol)].tile == NoTile {
+		if !b.HasTile(row+(i*dRow), col+(i*dCol)) {
 			bonus := b.cells[row+(i*dRow)][col+(i*dCol)].bonus
 			switch bonus {
 			case DoubleLetter:
@@ -159,7 +202,7 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 	wordLetters := make([]Tile, len(word))
 
 	for i, letter := range word {
-		if b.cells[row+(dRow*i)][col+(dCol*i)].tile == NoTile {
+		if !b.HasTile(row+(dRow*i), col+(dCol*i)) {
 			subWord, ok := b.GrowWord(letter, row+(dRow*i), col+(dCol*i), !direction)
 			if ok {
 				words = append(words, subWord)
@@ -213,22 +256,23 @@ func (b *Board) Print() {
 			_, _ = i, j
 
 			letter := ' '
+			cellColor := color.New(color.FgBlack)
 			if cell.tile != NoTile {
 				letter = tile2Rune(cell.tile)
-			}
-			cellColor := color.New(color.FgBlack)
-
-			switch cell.bonus {
-			case DoubleWord:
-				cellColor = cellColor.Add(color.BgRed)
-			case TripleWord:
-				cellColor = cellColor.Add(color.BgRed)
-			case DoubleLetter:
-				cellColor = cellColor.Add(color.BgBlue)
-			case TripleLetter:
-				cellColor = cellColor.Add(color.BgBlue)
-			case None:
-				cellColor = cellColor.Add(color.BgWhite)
+				cellColor = cellColor.Add(color.BgMagenta)
+			} else {
+				switch cell.bonus {
+				case DoubleWord:
+					cellColor = cellColor.Add(color.BgCyan)
+				case TripleWord:
+					cellColor = cellColor.Add(color.BgRed)
+				case DoubleLetter:
+					cellColor = cellColor.Add(color.BgBlue)
+				case TripleLetter:
+					cellColor = cellColor.Add(color.BgGreen)
+				case None:
+					cellColor = cellColor.Add(color.BgWhite)
+				}
 			}
 
 			cellColor.Printf(" %c ", letter)
@@ -276,6 +320,14 @@ func tiles2String(tiles []Tile) string {
 	word := ""
 	for _, l := range tiles {
 		word += string(tile2Rune(l))
+	}
+	return word
+}
+
+func tiles2Word(tiles []Tile) Word {
+	word := make(Word, len(tiles))
+	for i, l := range tiles {
+		word[i] = l.ToLetter()
 	}
 	return word
 }

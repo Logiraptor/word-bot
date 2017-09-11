@@ -9,14 +9,13 @@ func NewTrie() *Trie {
 	return &Trie{}
 }
 
-func (t *Trie) Contains(word string) bool {
+func (t *Trie) Contains(word Word) bool {
 	current := t
 	for _, letter := range word {
-		i := rune2Letter(letter)
-		if current.nodes[i] == nil {
+		if current.nodes[letter] == nil {
 			return false
 		}
-		current = current.nodes[i]
+		current = current.nodes[letter]
 	}
 	return current.terminal
 }

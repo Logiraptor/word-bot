@@ -62,3 +62,41 @@ func TestConversions(t *testing.T) {
 	r := letter2Rune(tile.ToLetter())
 	assert.Equal(t, r, 'o')
 }
+
+func TestValidation(t *testing.T) {
+	b := NewBoard()
+	result := b.ValidateMove(toTiles("dugz"), 7, 7, Horizontal)
+	assert.Equal(t, false, result)
+}
+
+func TestMultiValidationSuccess(t *testing.T) {
+	b := NewBoard()
+	b.PlaceTiles(toTiles("handy"), 7, 7, Horizontal)
+	result := b.ValidateMove(toTiles("stone"), 6, 5, Horizontal)
+	assert.Equal(t, true, result)
+}
+
+func TestMultiValidation(t *testing.T) {
+	b := NewBoard()
+	b.PlaceTiles(toTiles("handy"), 7, 7, Horizontal)
+	result := b.ValidateMove(toTiles("stones"), 6, 5, Horizontal)
+	assert.Equal(t, false, result)
+}
+
+func TestValidationDanglingWords(t *testing.T) {
+	b := NewBoard()
+	b.PlaceTiles(toTiles("handy"), 7, 7, Horizontal)
+	result := b.ValidateMove(toTiles("stones"), 5, 5, Horizontal)
+	assert.Equal(t, false, result)
+}
+
+func TestValidationOverflowingWords(t *testing.T) {
+	b := NewBoard()
+	x := b.ValidateMove(toTiles("alfresco"), 7, 7, Horizontal)
+	assert.Equal(t, true, x)
+	b.PlaceTiles(toTiles("alfresco"), 7, 7, Horizontal)
+	result := b.ValidateMove(toTiles("tabarded"), 6, 14, Horizontal)
+	if !assert.Equal(t, false, result) {
+		b.Print()
+	}
+}

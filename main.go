@@ -13,22 +13,32 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func main() {
+var wordDB *Trie
+
+func init() {
 	words, err := loadWords()
 	if err != nil {
-		fmt.Println(err)
-		return
+		panic(err)
 	}
 
-	wordDB := NewTrie()
+	wordDB = NewTrie()
 	for _, word := range words {
 		wordDB.AddWord(word)
 	}
+}
 
+func main() {
 	board := NewBoard()
 	board.PlaceTiles(MakeTiles(MakeWord("hello"), "xxxxx"), 7, 7, Horizontal)
 	board.PlaceTiles(MakeTiles(MakeWord("hello"), "xxxxx"), 7, 7, Vertical)
 	board.Print()
+
+	bob := NewBruteForceAI(board)
+	moves := bob.FindMoves(MakeTiles(MakeWord("jrbgioa"), "xxxxxxx"))
+	for _, move := range moves[:5] {
+		fmt.Println("I would play:", move)
+	}
+
 }
 
 func loadWords() ([]string, error) {
