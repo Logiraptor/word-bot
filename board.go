@@ -176,6 +176,8 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 	dRow, dCol := direction.Offsets()
 	sum := Bonus(0)
 	wordBonus := Bonus(1)
+	additionalBonus := Bonus(0)
+	lettersUsed := 0
 	for i, letter := range word {
 		letterBonus := Bonus(1)
 		if !b.HasTile(row+(i*dRow), col+(i*dCol)) {
@@ -190,10 +192,14 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 			case DoubleWord:
 				wordBonus *= 2
 			}
+			lettersUsed++
 		}
 		sum += letter.PointValue() * letterBonus
 	}
-	return sum * wordBonus
+	if lettersUsed >= 7 {
+		additionalBonus = 50
+	}
+	return sum*wordBonus + additionalBonus
 }
 
 func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []PlacedWord {

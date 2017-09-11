@@ -52,6 +52,11 @@ func TestPlacingJustAnS(t *testing.T) {
 	assertScore(t, b, 6, toTiles("s"), 7, 10, Horizontal)
 }
 
+func TestUsing7Letters(t *testing.T) {
+	b := NewBoard()
+	assertScore(t, b, 134, toTiles("alfresco"), 7, 7, Horizontal)
+}
+
 func TestBlankTiles(t *testing.T) {
 	b := NewBoard()
 	assertScore(t, b, 8, MakeTiles(MakeWord("dog"), "x x"), 7, 7, Horizontal)

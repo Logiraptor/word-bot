@@ -34,7 +34,7 @@ func main() {
 	board.Print()
 
 	bob := NewBruteForceAI(board)
-	moves := bob.FindMoves(MakeTiles(MakeWord("jrbgioa"), "xxxxxxx"))
+	moves := bob.FindMoves(MakeTiles(MakeWord("alfresc"), "xxxxxxx"))
 	for _, move := range moves[:5] {
 		fmt.Println("I would play:", move)
 	}
