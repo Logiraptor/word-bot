@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"sort"
+	"sync"
 )
 
 type BruteForceAI struct {
@@ -33,52 +33,63 @@ func (s ScoredMove) String() string {
 func (b *BruteForceAI) FindMoves(rack []Tile) []ScoredMove {
 	words := permute(rack)
 
-	validMoves := []PlacedWord{}
-
-	cells := 15.0 * 15.0
-
-	fmt.Println("Checking %d words", len(words))
+	fmt.Println("Checking", len(words), "words")
 	fmt.Println()
 
+	validChan := make(chan PlacedWord, 100)
+	wg := new(sync.WaitGroup)
 	for i := 0; i < 15; i++ {
-		for j := 0; j < 15; j++ {
-			for _, permutedWord := range words {
-				if b.board.ValidateMove(permutedWord, i, j, Horizontal) {
-					validMoves = append(validMoves, PlacedWord{
-						word:      permutedWord,
-						row:       i,
-						col:       j,
-						direction: Horizontal,
-					})
-				}
+		wg.Add(1)
+		go func(i int) {
+			for j := 0; j < 15; j++ {
+				for _, permutedWord := range words {
+					if b.board.ValidateMove(permutedWord, i, j, Horizontal) {
+						validChan <- PlacedWord{
+							word:      permutedWord,
+							row:       i,
+							col:       j,
+							direction: Horizontal,
+						}
+					}
 
-				if b.board.ValidateMove(permutedWord, i, j, Vertical) {
-					validMoves = append(validMoves, PlacedWord{
-						word:      permutedWord,
-						row:       i,
-						col:       j,
-						direction: Vertical,
-					})
+					if b.board.ValidateMove(permutedWord, i, j, Vertical) {
+						validChan <- PlacedWord{
+							word:      permutedWord,
+							row:       i,
+							col:       j,
+							direction: Vertical,
+						}
+					}
 				}
 			}
-			fmt.Print("\rFinished ", int((float64(i*15+j)/cells)*100), "%")
+			wg.Done()
+		}(i)
+	}
+
+	go func() {
+		wg.Wait()
+		close(validChan)
+	}()
+
+	var bestMove ScoredMove
+	numMoves := 0
+	for v := range validChan {
+		numMoves++
+		fmt.Print("\rFound ", numMoves, " valid moves")
+
+		current := ScoredMove{
+			PlacedWord: v,
+			Score:      b.board.Score(v.word, v.row, v.col, v.direction),
+		}
+
+		if current.Score > bestMove.Score {
+			bestMove = current
 		}
 	}
 
 	fmt.Println()
 
-	scoredMoves := []ScoredMove{}
-
-	for _, validMove := range validMoves {
-		scoredMoves = append(scoredMoves, ScoredMove{
-			PlacedWord: validMove,
-			Score:      b.board.Score(validMove.word, validMove.row, validMove.col, validMove.direction),
-		})
-	}
-
-	sort.Sort(ByScore(scoredMoves))
-
-	return scoredMoves
+	return []ScoredMove{bestMove}
 }
 
 func permute(rack []Tile) [][]Tile {

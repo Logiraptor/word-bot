@@ -31,7 +31,7 @@ func TestFirstWord(t *testing.T) {
 func TestSecondWord(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(toTiles("dog"), 7, 7, Horizontal)
-	assertScore(t, b, 8, toTiles("goats"), 7, 9, Vertical)
+	assertScore(t, b, 8, toTiles("oats"), 7, 9, Vertical)
 }
 
 func TestMultiWord(t *testing.T) {
@@ -113,4 +113,21 @@ func TestJint(t *testing.T) {
 	b.PlaceTiles(toTiles("tusseh"), 14, 0, Horizontal)
 	result := b.ValidateMove(toTiles("jin"), 11, 0, Vertical)
 	assert.False(t, result)
+}
+
+func TestBridgingWords(t *testing.T) {
+	b := NewBoard()
+
+	b.PlaceTiles(toTiles("bat"), 7, 7, Horizontal)
+	b.PlaceTiles(toTiles("oard"), 7, 7, Vertical)
+	b.PlaceTiles(toTiles("ravel"), 7, 9, Vertical)
+
+	result := b.ValidateMove(toTiles("ae"), 10, 7, Horizontal)
+	assert.True(t, result)
+
+	words := b.FindNewWords(toTiles("ae"), 10, 7, Horizontal)
+	assert.Len(t, words, 1)
+	if !assert.Equal(t, "rave", tiles2String(words[0].word)) {
+		b.Print()
+	}
 }
