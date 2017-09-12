@@ -35,6 +35,11 @@ func (b *BruteForceAI) FindMoves(rack []Tile) []ScoredMove {
 
 	validMoves := []PlacedWord{}
 
+	cells := 15.0 * 15.0
+
+	fmt.Println("Checking %d words", len(words))
+	fmt.Println()
+
 	for i := 0; i < 15; i++ {
 		for j := 0; j < 15; j++ {
 			for _, permutedWord := range words {
@@ -56,8 +61,11 @@ func (b *BruteForceAI) FindMoves(rack []Tile) []ScoredMove {
 					})
 				}
 			}
+			fmt.Print("\rFinished ", int((float64(i*15+j)/cells)*100), "%")
 		}
 	}
+
+	fmt.Println()
 
 	scoredMoves := []ScoredMove{}
 
@@ -83,6 +91,17 @@ func permute(rack []Tile) [][]Tile {
 	output := make([][]Tile, len(subPerm), len(subPerm)*2)
 	copy(output, subPerm)
 
+	if first.IsBlank() {
+		for option := Tile(0); option < 26; option++ {
+			for _, perm := range subPerm {
+				for i := range perm {
+					output = append(output, append(append(perm[:i:i], option), perm[i:]...))
+				}
+				output = append(output, append(perm, option))
+			}
+		}
+		return output
+	}
 	for _, perm := range subPerm {
 		for i := range perm {
 			output = append(output, append(append(perm[:i:i], first), perm[i:]...))

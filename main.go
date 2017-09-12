@@ -53,35 +53,42 @@ func (p *Player) Play(ai *BruteForceAI, board *Board, bag *Bag) {
 	}
 }
 
+type GameState struct {
+	board   *Board
+	bag     *Bag
+	players []*Player
+}
+
 func main() {
 	rand.Seed(time.Now().Unix())
 
-	board := NewBoard()
-	board.Print()
+	gs := new(GameState)
+	gs.board = NewBoard()
+	gs.board.Print()
 
-	bag := NewBag()
-	bag.Shuffle()
+	gs.bag = NewBag()
+	gs.bag.Shuffle()
 
 	bob := new(Player)
 	bob.name = "bob"
-	bob.rack = Rack(bag.Draw(7))
+	bob.rack = Rack(gs.bag.Draw(7))
 
 	alice := new(Player)
 	alice.name = "alice"
-	alice.rack = Rack(bag.Draw(7))
+	alice.rack = Rack(gs.bag.Draw(7))
 
-	ai := NewBruteForceAI(board)
+	ai := NewBruteForceAI(gs.board)
 
-	players := []*Player{bob, alice}
+	gs.players = []*Player{bob, alice}
 
 	for len(bob.rack) > 0 || len(alice.rack) > 0 {
-		for _, player := range players {
-			player.Play(ai, board, bag)
+		for _, player := range gs.players {
+			player.Play(ai, gs.board, gs.bag)
 		}
 
 		fmt.Println("Bob:", bob.score, "Alice:", alice.score)
 
-		board.Print()
+		gs.board.Print()
 	}
 
 	fmt.Println("Bob:", bob.score, "Alice:", alice.score)
