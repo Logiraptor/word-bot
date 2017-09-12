@@ -105,3 +105,12 @@ func TestValidationOverflowingWords(t *testing.T) {
 		b.Print()
 	}
 }
+
+// Regression tests
+
+func TestJint(t *testing.T) {
+	b := NewBoard()
+	b.PlaceTiles(toTiles("tusseh"), 14, 0, Horizontal)
+	result := b.ValidateMove(toTiles("jin"), 11, 0, Vertical)
+	assert.False(t, result)
+}

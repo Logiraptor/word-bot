@@ -4,11 +4,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -27,18 +29,62 @@ func init() {
 	}
 }
 
+type Player struct {
+	name  string
+	rack  Rack
+	score Score
+}
+
+func (p *Player) Play(ai *BruteForceAI, board *Board, bag *Bag) {
+	moves := ai.FindMoves(p.rack)
+	if len(moves) > 0 {
+		bestMove := moves[0]
+		fmt.Println(p.name, "would play:", bestMove)
+		p.score += bestMove.Score
+
+		used := board.PlaceTiles(bestMove.word, bestMove.row, bestMove.col, bestMove.direction)
+		p.rack.Remove(used)
+		p.rack = append(p.rack, Rack(bag.Draw(7-len(p.rack)))...)
+		fmt.Println(p.name, "rack is now", p.rack)
+
+		board.Print()
+	} else {
+		fmt.Println(p.name, "passes")
+	}
+}
+
 func main() {
+	rand.Seed(time.Now().Unix())
+
 	board := NewBoard()
-	board.PlaceTiles(MakeTiles(MakeWord("hello"), "xxxxx"), 7, 7, Horizontal)
-	board.PlaceTiles(MakeTiles(MakeWord("hello"), "xxxxx"), 7, 7, Vertical)
 	board.Print()
 
-	bob := NewBruteForceAI(board)
-	moves := bob.FindMoves(MakeTiles(MakeWord("alfresc"), "xxxxxxx"))
-	for _, move := range moves[:5] {
-		fmt.Println("I would play:", move)
+	bag := NewBag()
+	bag.Shuffle()
+
+	bob := new(Player)
+	bob.name = "bob"
+	bob.rack = Rack(bag.Draw(7))
+
+	alice := new(Player)
+	alice.name = "alice"
+	alice.rack = Rack(bag.Draw(7))
+
+	ai := NewBruteForceAI(board)
+
+	players := []*Player{bob, alice}
+
+	for len(bob.rack) > 0 || len(alice.rack) > 0 {
+		for _, player := range players {
+			player.Play(ai, board, bag)
+		}
+
+		fmt.Println("Bob:", bob.score, "Alice:", alice.score)
+
+		board.Print()
 	}
 
+	fmt.Println("Bob:", bob.score, "Alice:", alice.score)
 }
 
 func loadWords() ([]string, error) {

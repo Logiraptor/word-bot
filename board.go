@@ -120,8 +120,8 @@ func NewBoard() *Board {
 }
 
 func (b *Board) HasTile(row, col int) bool {
-	if row <= 0 || row >= 15 ||
-		col <= 0 || col >= 15 {
+	if row < 0 || row >= 15 ||
+		col < 0 || col >= 15 {
 		return false
 	}
 	return b.cells[row][col].tile != NoTile
@@ -131,9 +131,16 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction) boo
 
 	// Check that it connects to other words
 	connectsToOtherWords := false
+	lettersUsed := 0
 	dRow, dCol := direction.Offsets()
 	for i := 0; i < len(word); i++ {
 		tileRow, tileCol := row+dRow*i, col+dCol*i
+
+		if !b.HasTile(tileRow, tileCol) {
+			lettersUsed++
+		} else if b.cells[tileRow][tileCol].tile != word[i] {
+			return false
+		}
 
 		if tileRow >= 15 || tileCol >= 15 {
 			return false
@@ -149,7 +156,7 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction) boo
 		}
 	}
 
-	if !connectsToOtherWords {
+	if !connectsToOtherWords || lettersUsed == 0 {
 		return false
 	}
 
@@ -164,12 +171,24 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction) boo
 
 func (b *Board) Score(word []Tile, row, col int, direction Direction) Score {
 	words := b.FindNewWords(word, row, col, direction)
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("Panic caught while scoring: %s which yielded %s\n", PlacedWord{word, row, col, direction}, words)
+			panic(r)
+		}
+	}()
+
 	total := Score(0)
 	for _, word := range words {
 		wordScore := b.scoreWord(word.word, word.row, word.col, word.direction)
 		total += wordScore
 	}
 	return total
+}
+
+func (b *Board) outOfBounds(row, col int) bool {
+	return row < 0 || row >= 15 || col < 0 || col >= 15
 }
 
 func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score {
@@ -179,9 +198,14 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 	additionalBonus := Bonus(0)
 	lettersUsed := 0
 	for i, letter := range word {
+		tileRow := row + (i * dRow)
+		tileCol := col + (i * dCol)
+		if b.outOfBounds(tileRow, tileCol) {
+			panic(fmt.Sprintf("attempted to score word %s - OUT OF BOUNDS (moving [%d,%d])", PlacedWord{word, row, col, direction}, dRow, dCol))
+		}
 		letterBonus := Bonus(1)
-		if !b.HasTile(row+(i*dRow), col+(i*dCol)) {
-			bonus := b.cells[row+(i*dRow)][col+(i*dCol)].bonus
+		if !b.HasTile(tileRow, tileCol) {
+			bonus := b.cells[tileRow][tileCol].bonus
 			switch bonus {
 			case DoubleLetter:
 				letterBonus *= 2
@@ -219,6 +243,7 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 
 	// Grow placed word
 	lhs := b.scan(row-dRow, col-dCol, -dRow, -dCol)
+	reverse(lhs)
 	rhs := b.scan(
 		row+dRow*len(wordLetters),
 		col+dCol*len(wordLetters),
@@ -237,23 +262,27 @@ func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool)
 	dRow, dCol := dir.Offsets()
 
 	lhs := b.scan(row-dRow, col-dCol, -dRow, -dCol)
+	reverse(lhs)
 	rhs := b.scan(row+dRow, col+dCol, dRow, dCol)
 	word := append(append(lhs, l), rhs...)
 
 	return PlacedWord{
-		col:       col - len(lhs),
-		row:       row,
+		col:       col - len(lhs)*dCol,
+		row:       row - len(lhs)*dRow,
 		direction: dir,
 		word:      word,
 	}, len(word) > 1
 }
 
-func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) {
+func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) (used []Tile) {
 	dRow, dCol := direction.Offsets()
-
 	for i, tile := range tiles {
-		b.cells[row+i*dRow][col+i*dCol].tile = tile
+		if !b.HasTile(row+i*dRow, col+i*dCol) {
+			used = append(used, tile)
+			b.cells[row+i*dRow][col+i*dCol].tile = tile
+		}
 	}
+	return used
 }
 
 func (b *Board) Print() {
@@ -289,14 +318,21 @@ func (b *Board) Print() {
 
 func (b *Board) scan(row, col, dRow, dCol int) []Tile {
 	letters := []Tile{}
-	for col > 0 && col < 15 &&
-		row > 0 && row < 15 &&
+	for col >= 0 && col < 15 &&
+		row >= 0 && row < 15 &&
 		b.cells[row][col].tile != NoTile {
 		letters = append(letters, b.cells[row][col].tile)
 		row += dRow
 		col += dCol
 	}
 	return letters
+}
+
+func reverse(tiles []Tile) {
+	for i := 0; i < len(tiles)/2; i++ {
+		j := len(tiles) - i - 1
+		tiles[i], tiles[j] = tiles[j], tiles[i]
+	}
 }
 
 func rune2Letter(r rune) Letter {
