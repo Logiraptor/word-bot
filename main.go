@@ -29,13 +29,17 @@ func init() {
 	}
 }
 
+type AI interface {
+	FindMoves(rack []Tile) []ScoredMove
+}
+
 type Player struct {
 	name  string
 	rack  Rack
 	score Score
 }
 
-func (p *Player) Play(ai *BruteForceAI, board *Board, bag *Bag) {
+func (p *Player) Play(ai AI, board *Board, bag *Bag) {
 	moves := ai.FindMoves(p.rack)
 	if len(moves) > 0 {
 		bestMove := moves[0]
@@ -77,7 +81,8 @@ func main() {
 	alice.name = "alice"
 	alice.rack = Rack(gs.bag.Draw(7))
 
-	ai := NewBruteForceAI(gs.board)
+	// bf := NewBruteForceAI(gs.board)
+	ai := NewSmartyAI(gs.board)
 
 	gs.players = []*Player{bob, alice}
 

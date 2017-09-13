@@ -131,3 +131,16 @@ func TestBridgingWords(t *testing.T) {
 		b.Print()
 	}
 }
+
+func TestConsumableRack(t *testing.T) {
+	c := ConsumableRack{
+		rack:     toTiles("abcd"),
+		consumed: 0,
+	}
+
+	assert.Equal(t, true, c.CanConsume(1))
+	next := c.Consume(1)
+	
+	assert.Equal(t, true, c.CanConsume(1))
+	assert.Equal(t, false, next.CanConsume(1))
+}

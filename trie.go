@@ -20,6 +20,11 @@ func (t *Trie) Contains(word Word) bool {
 	return current.terminal
 }
 
+func (t *Trie) CanBranch(tile Tile) (*Trie, bool) {
+	next := t.nodes[tile&LetterMask]
+	return next, next != nil
+}
+
 func (t *Trie) AddWord(word string) {
 	current := t
 	for _, letter := range word {
