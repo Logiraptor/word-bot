@@ -86,7 +86,7 @@ func main() {
 
 	gs.players = []*Player{bob, alice}
 
-	for len(bob.rack) > 0 || len(alice.rack) > 0 {
+	for len(bob.rack) > 0 && len(alice.rack) > 0 {
 		for _, player := range gs.players {
 			player.Play(ai, gs.board, gs.bag)
 		}
@@ -96,6 +96,7 @@ func main() {
 		gs.board.Print()
 	}
 
+	fmt.Println("GAME OVER")
 	fmt.Println("Bob:", bob.score, "Alice:", alice.score)
 }
 

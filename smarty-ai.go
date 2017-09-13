@@ -43,17 +43,24 @@ func (b *SmartyAI) FindMoves(tiles []Tile) []ScoredMove {
 	for i := 0; i < 15; i++ {
 		for j := 0; j < 15; j++ {
 			b.Search(i, j, Horizontal, rack, wordDB, nil, func(word []Tile) {
+				if len(word) == 0 {
+					return
+				}
+
 				if b.board.ValidateMove(word, i, j, Horizontal) {
-					newWord := make([]Tile, len(word))
-					copy(newWord, word)
 
 					numMoves++
-					current := ScoredMove{
-						PlacedWord: PlacedWord{newWord, i, j, Horizontal},
-						Score:      b.board.Score(newWord, i, j, Horizontal),
-					}
+					score := b.board.Score(word, i, j, Horizontal)
 
-					if current.Score > bestMove.Score {
+					if score > bestMove.Score {
+						newWord := make([]Tile, len(word))
+						copy(newWord, word)
+
+						current := ScoredMove{
+							PlacedWord: PlacedWord{newWord, i, j, Horizontal},
+							Score:      score,
+						}
+
 						bestMove = current
 					}
 					fmt.Print("\rFound ", numMoves, " valid moves. High score: ", bestMove)
@@ -61,6 +68,10 @@ func (b *SmartyAI) FindMoves(tiles []Tile) []ScoredMove {
 			})
 
 			b.Search(i, j, Vertical, rack, wordDB, nil, func(word []Tile) {
+				if len(word) == 0 {
+					return
+				}
+
 				if b.board.ValidateMove(word, i, j, Vertical) {
 					newWord := make([]Tile, len(word))
 					copy(newWord, word)
@@ -84,7 +95,9 @@ func (b *SmartyAI) FindMoves(tiles []Tile) []ScoredMove {
 	fmt.Println()
 
 	fmt.Println("Finished in", dur)
-
+	if bestMove.word == nil {
+		return nil
+	}
 	return []ScoredMove{bestMove}
 }
 
