@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 type BruteForceAI struct {
@@ -34,6 +35,7 @@ func (b *BruteForceAI) FindMoves(rack []Tile) []ScoredMove {
 	words := permute(rack)
 
 	fmt.Println("Checking", len(words), "words")
+	start := time.Now()
 	fmt.Println()
 
 	validChan := make(chan PlacedWord, 100)
@@ -41,8 +43,17 @@ func (b *BruteForceAI) FindMoves(rack []Tile) []ScoredMove {
 	for i := 0; i < 15; i++ {
 		wg.Add(1)
 		go func(i int) {
+			defer wg.Done()
+
 			for j := 0; j < 15; j++ {
+				if b.board.HasTile(i, j) {
+					return
+				}
 				for _, permutedWord := range words {
+					if len(permutedWord) == 0 {
+						continue
+					}
+
 					if b.board.ValidateMove(permutedWord, i, j, Horizontal) {
 						validChan <- PlacedWord{
 							word:      permutedWord,
@@ -62,7 +73,6 @@ func (b *BruteForceAI) FindMoves(rack []Tile) []ScoredMove {
 					}
 				}
 			}
-			wg.Done()
 		}(i)
 	}
 
@@ -75,7 +85,6 @@ func (b *BruteForceAI) FindMoves(rack []Tile) []ScoredMove {
 	numMoves := 0
 	for v := range validChan {
 		numMoves++
-		fmt.Print("\rFound ", numMoves, " valid moves")
 
 		current := ScoredMove{
 			PlacedWord: v,
@@ -85,9 +94,13 @@ func (b *BruteForceAI) FindMoves(rack []Tile) []ScoredMove {
 		if current.Score > bestMove.Score {
 			bestMove = current
 		}
+		fmt.Print("\rFound ", numMoves, " valid moves. High score: ", bestMove)
 	}
 
+	dur := time.Since(start)
 	fmt.Println()
+
+	fmt.Println("Finished in", dur)
 
 	return []ScoredMove{bestMove}
 }
@@ -103,12 +116,13 @@ func permute(rack []Tile) [][]Tile {
 	copy(output, subPerm)
 
 	if first.IsBlank() {
-		for option := Tile(0); option < 26; option++ {
+		for option := 'a'; option <= 'z'; option++ {
+			letter := rune2Tile(option, true)
 			for _, perm := range subPerm {
 				for i := range perm {
-					output = append(output, append(append(perm[:i:i], option), perm[i:]...))
+					output = append(output, append(append(perm[:i:i], letter), perm[i:]...))
 				}
-				output = append(output, append(perm, option))
+				output = append(output, append(perm, letter))
 			}
 		}
 		return output

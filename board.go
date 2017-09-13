@@ -133,25 +133,26 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction) boo
 	connectsToOtherWords := false
 	dRow, dCol := direction.Offsets()
 	wordPos := 0
-	for progress := 0; progress < len(word); progress++ {
+	for progress := 0; wordPos < len(word); progress++ {
 		tileRow := row + dRow*progress
 		tileCol := col + dCol*progress
 
-		if tileRow >= 15 || tileCol >= 15 {
+		if b.outOfBounds(tileRow, tileCol) {
 			return false
 		}
-
-		if b.HasTile(tileRow-1, tileCol) ||
-			b.HasTile(tileRow+1, tileCol) ||
-			b.HasTile(tileRow, tileCol-1) ||
-			b.HasTile(tileRow, tileCol+1) {
-			connectsToOtherWords = true
-		} else if tileRow == 7 && tileCol == 7 {
-			connectsToOtherWords = true
-		}
-
 		if !b.HasTile(tileRow, tileCol) {
 			wordPos++
+		}
+
+		if !connectsToOtherWords {
+			if tileRow == 7 && tileCol == 7 {
+				connectsToOtherWords = true
+			} else if b.HasTile(tileRow-1, tileCol) ||
+				b.HasTile(tileRow+1, tileCol) ||
+				b.HasTile(tileRow, tileCol-1) ||
+				b.HasTile(tileRow, tileCol+1) {
+				connectsToOtherWords = true
+			}
 		}
 	}
 
