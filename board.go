@@ -13,6 +13,13 @@ type Score int
 type Bonus = Score
 type Word []Letter
 
+func (t Tile) String() string {
+	if t.IsBlank() {
+		return "_"
+	}
+	return string(tile2Rune(t))
+}
+
 const NoTile = -1
 const BlankTileBit = 1 << 10
 const LetterMask = 1<<7 - 1

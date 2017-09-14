@@ -21,7 +21,7 @@ func (t *Trie) Contains(word Word) bool {
 }
 
 func (t *Trie) CanBranch(tile Tile) (*Trie, bool) {
-	next := t.nodes[tile&LetterMask]
+	next := t.nodes[tile.ToLetter()]
 	return next, next != nil
 }
 
