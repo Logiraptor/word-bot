@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/fatih/color"
 )
@@ -12,6 +14,20 @@ type Direction bool
 type Score int
 type Bonus = Score
 type Word []Letter
+
+func bonusToString(b Bonus) string {
+	switch b {
+	case DW:
+		return "DW"
+	case TW:
+		return "TW"
+	case TL:
+		return "TL"
+	case DL:
+		return "DL"
+	}
+	return ""
+}
 
 func (t Tile) String() string {
 	if t.IsBlank() {
@@ -107,23 +123,32 @@ var normalBonus [15][15]Bonus = [...][15]Bonus{
 }
 
 type Cell struct {
-	bonus Bonus
-	tile  Tile
+	Bonus Bonus
+	Tile  Tile
 }
 
 type Board struct {
-	cells [15][15]Cell
+	Cells [15][15]Cell
 }
 
 func NewBoard() *Board {
 	b := new(Board)
-	for i, row := range b.cells {
+	for i, row := range b.Cells {
 		for j := range row {
-			b.cells[i][j].tile = NoTile
-			b.cells[i][j].bonus = normalBonus[i][j]
+			b.Cells[i][j].Tile = NoTile
+			b.Cells[i][j].Bonus = normalBonus[i][j]
 		}
 	}
 	return b
+}
+
+func (b *Board) Save(filename string) error {
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return json.NewEncoder(f).Encode(b)
 }
 
 func (b *Board) HasTile(row, col int) bool {
@@ -131,7 +156,7 @@ func (b *Board) HasTile(row, col int) bool {
 		col < 0 || col >= 15 {
 		return false
 	}
-	return b.cells[row][col].tile != NoTile
+	return b.Cells[row][col].Tile != NoTile
 }
 
 func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction) bool {
@@ -212,7 +237,7 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 		}
 		letterBonus := Bonus(1)
 		if !b.HasTile(tileRow, tileCol) {
-			bonus := b.cells[tileRow][tileCol].bonus
+			bonus := b.Cells[tileRow][tileCol].Bonus
 			switch bonus {
 			case DoubleLetter:
 				letterBonus *= 2
@@ -245,7 +270,7 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 	for !b.outOfBounds(tileRow, tileCol) && wordPos < len(word) {
 
 		if b.HasTile(tileRow, tileCol) {
-			wordLetters = append(wordLetters, b.cells[tileRow][tileCol].tile)
+			wordLetters = append(wordLetters, b.Cells[tileRow][tileCol].Tile)
 		} else {
 			subWord, ok := b.GrowWord(word[wordPos], tileRow, tileCol, !direction)
 			if ok {
@@ -307,7 +332,7 @@ func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) []Ti
 		}
 
 		if !b.HasTile(tileRow, tileCol) {
-			b.cells[tileRow][tileCol].tile = tiles[wordPos]
+			b.Cells[tileRow][tileCol].Tile = tiles[wordPos]
 			wordPos++
 		}
 		progress++
@@ -316,17 +341,17 @@ func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) []Ti
 }
 
 func (b *Board) Print() {
-	for i, row := range b.cells {
+	for i, row := range b.Cells {
 		for j, cell := range row {
 			_, _ = i, j
 
 			letter := ' '
 			cellColor := color.New(color.FgBlack)
-			if cell.tile != NoTile {
-				letter = tile2Rune(cell.tile)
+			if cell.Tile != NoTile {
+				letter = tile2Rune(cell.Tile)
 				cellColor = cellColor.Add(color.BgMagenta)
 			} else {
-				switch cell.bonus {
+				switch cell.Bonus {
 				case DoubleWord:
 					cellColor = cellColor.Add(color.BgCyan)
 				case TripleWord:
@@ -350,8 +375,8 @@ func (b *Board) scan(row, col, dRow, dCol int) []Tile {
 	letters := []Tile{}
 	for col >= 0 && col < 15 &&
 		row >= 0 && row < 15 &&
-		b.cells[row][col].tile != NoTile {
-		letters = append(letters, b.cells[row][col].tile)
+		b.Cells[row][col].Tile != NoTile {
+		letters = append(letters, b.Cells[row][col].Tile)
 		row += dRow
 		col += dCol
 	}

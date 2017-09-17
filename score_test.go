@@ -1,15 +1,10 @@
 package main
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func toTiles(word string) []Tile {
-	return MakeTiles(MakeWord(word), strings.Repeat("x", len(word)))
-}
 
 func assertScore(t *testing.T, b *Board, score Score, word []Tile, row, col int, dir Direction) {
 	t.Helper()
@@ -140,7 +135,7 @@ func TestConsumableRack(t *testing.T) {
 
 	assert.Equal(t, true, c.CanConsume(1))
 	next := c.Consume(1)
-	
+
 	assert.Equal(t, true, c.CanConsume(1))
 	assert.Equal(t, false, next.CanConsume(1))
 }

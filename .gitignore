@@ -1,0 +1,4 @@
+public/*.js
+public/*.js.map
+public/*.json
+node_modules/

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -63,9 +64,218 @@ type GameState struct {
 	players []*Player
 }
 
+func toTiles(word string) []Tile {
+	return MakeTiles(MakeWord(word), strings.Repeat("x", len(word)))
+}
+
+type MoveRequest struct {
+	Moves []Move   `json:"moves"`
+	Rack  []TileJS `json:"rack"`
+}
+
+type TileJS struct {
+	Letter string
+	Blank  bool
+	Value  Score
+	Bonus  string
+}
+
+type Move struct {
+	Tiles []TileJS `json:"tiles"`
+	Row   int      `json:"row"`
+	Col   int      `json:"col"`
+	Dir   string   `json:"direction"` // vertical / horizontal
+}
+
+type ScoredMoveJS struct {
+	Tiles []TileJS `json:"tiles"`
+	Row   int      `json:"row"`
+	Col   int      `json:"col"`
+	Dir   string   `json:"direction"` // vertical / horizontal
+	Score Score    `json:"score"`
+}
+
+type RenderedBoard struct {
+	Board  [15][15]TileJS
+	Scores []Score
+}
+
+func jsTilesToTiles(jsTiles []TileJS) []Tile {
+	tiles := []Tile{}
+	for _, t := range jsTiles {
+		letters := []rune(t.Letter)
+		letter := 'a'
+		if len(letters) > 0 {
+			letter = letters[0]
+		}
+		tiles = append(tiles, rune2Tile(letter, t.Blank))
+	}
+	return tiles
+}
+
+func tiles2JsTiles(tiles []Tile) []TileJS {
+	jsTiles := []TileJS{}
+	for _, t := range tiles {
+		jsTiles = append(jsTiles, TileJS{
+			Blank:  t.IsBlank(),
+			Letter: string(tile2Rune(t)),
+			Value:  t.PointValue(),
+		})
+	}
+	return jsTiles
+}
+
+func getMove(rw http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+		}
+	}()
+	var moves MoveRequest
+	err := json.NewDecoder(req.Body).Decode(&moves)
+	if err != nil {
+		http.Error(rw, "JSON parsing failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	b := NewBoard()
+	for _, move := range moves.Moves {
+		dir := Vertical
+		if move.Dir == "horizontal" {
+			dir = Horizontal
+		}
+
+		b.PlaceTiles(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
+	}
+
+	ai := NewSmartyAI(b)
+	play := ai.FindMoves(jsTilesToTiles(moves.Rack))[0]
+
+	dirString := "horizontal"
+	if play.direction == Vertical {
+		dirString = "vertical"
+	}
+
+	json.NewEncoder(rw).Encode(ScoredMoveJS{
+		Tiles: tiles2JsTiles(play.word),
+		Row:   play.row,
+		Col:   play.col,
+		Dir:   dirString,
+		Score: play.Score,
+	})
+}
+
+func renderBoard(rw http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+		}
+	}()
+	var moves MoveRequest
+	err := json.NewDecoder(req.Body).Decode(&moves)
+	if err != nil {
+		http.Error(rw, "JSON parsing failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var output RenderedBoard
+	output.Scores = make([]Score, len(moves.Moves))
+	b := NewBoard()
+	for i, move := range moves.Moves {
+		dir := Vertical
+		if move.Dir == "horizontal" {
+			dir = Horizontal
+		}
+		output.Scores[i] = b.Score(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
+		b.PlaceTiles(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
+	}
+
+	for i, row := range b.Cells {
+		for j, cell := range row {
+			if cell.Tile != NoTile {
+				output.Board[i][j] = TileJS{
+					Blank:  cell.Tile.IsBlank(),
+					Letter: string(tile2Rune(cell.Tile)),
+					Value:  cell.Tile.PointValue(),
+					Bonus:  bonusToString(cell.Bonus),
+				}
+			} else {
+				output.Board[i][j] = TileJS{
+					Blank:  true,
+					Letter: "",
+					Value:  -1,
+					Bonus:  bonusToString(cell.Bonus),
+				}
+			}
+		}
+	}
+
+	json.NewEncoder(rw).Encode(output)
+}
+
 func main() {
+	http.HandleFunc("/play", getMove)
+	http.HandleFunc("/render", renderBoard)
+	http.Handle("/", http.FileServer(http.Dir("public")))
+
+	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+}
+
+func aiVsHumanGame() {
 	rand.Seed(time.Now().Unix())
 
+	var err error
+	b := NewBoard()
+	// f, err := os.Open("./game.json")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// err = json.NewDecoder(f).Decode(b)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	ai := NewSmartyAI(b)
+	var (
+		word      string
+		row, col  int
+		direction Direction
+	)
+	for {
+		err = b.Save("./game.json")
+		if err != nil {
+			panic(err)
+		}
+		b.Print()
+
+		fmt.Println("Enter my tiles as a string with spaces for blanks")
+		in := bufio.NewReader(os.Stdin)
+		line, err := in.ReadString('\n')
+		if err != nil {
+			panic(err)
+		}
+
+		moves := ai.FindMoves(toTiles(line[:len(line)-1]))
+		if len(moves) > 0 {
+			move := moves[0]
+			fmt.Printf("I play %s (%s) at %d, %d for %d points\n", tiles2String(move.word), move.direction, move.row, move.col, move.Score)
+			b.PlaceTiles(move.word, move.row, move.col, move.direction)
+		}
+
+		err = b.Save("./game.json")
+		if err != nil {
+			panic(err)
+		}
+		b.Print()
+
+		fmt.Println("Enter Opponent's move as: tiles row col vertical?")
+		fmt.Scanln(&word, &row, &col, &direction)
+
+		tiles := toTiles(word)
+		b.PlaceTiles(tiles, row, col, direction)
+	}
+}
+
+func aiVsAiGame() {
 	gs := new(GameState)
 	gs.board = NewBoard()
 	gs.board.Print()

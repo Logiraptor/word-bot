@@ -111,7 +111,7 @@ func (s *SmartyAI) Search(i, j int, dir Direction, rack ConsumableRack, wordDB *
 		return
 	}
 	if s.board.HasTile(i, j) {
-		letter := s.board.cells[i][j].tile
+		letter := s.board.Cells[i][j].Tile
 		if next, ok := wordDB.CanBranch(letter); ok {
 			s.Search(i+dRow, j+dCol, dir, rack, next, prev, callback)
 		}
