@@ -6,7 +6,7 @@ export type Board = Tile[][];
 export class BoardView extends React.Component<{ tiles: Board }> {
     renderRow = (row: Tile[], i: number) => {
         let tiles = row.map((tile, i) => {
-            return <TileView key={i} tile={tile} />;
+            return <TileView key={i} tile={tile} onClick={() => {}} />;
         });
 
         return <div key={i}>{tiles}</div>;

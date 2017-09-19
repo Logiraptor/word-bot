@@ -21,7 +21,17 @@ export class RackInput extends React.Component<Props> {
     }
 
     renderTile = (tile: Tile, i: number) => {
-        return <TileView key={i} tile={tile} />;
+        return (
+            <TileView
+                key={i}
+                tile={tile}
+                onClick={() => {
+                    let tiles = [ ...this.props.Tiles ];
+                    tiles[i] = { ...tile, Blank: !tile.Blank };
+                    this.props.onChange(tiles);
+                }}
+            />
+        );
     };
 
     render() {
@@ -84,7 +94,7 @@ export class RackInput extends React.Component<Props> {
     }
 }
 
-export function TileView({ tile }: { tile: Tile }) {
+export function TileView({ tile, onClick }: { tile: Tile; onClick: () => void }) {
     let letter: string;
     if (tile.Blank && !tile.Letter) {
         letter = " ";
@@ -95,12 +105,12 @@ export function TileView({ tile }: { tile: Tile }) {
     let hasTile = tile.Value !== -1;
     if (hasTile) {
         return (
-            <span className={`space tile ${tile.Blank ? " blank" : ""}`}>
+            <span onClick={onClick} className={`space tile ${tile.Blank ? " blank" : ""}`}>
                 <span className="letter">{letter}</span>
                 <span className="score">{tile.Value}</span>{" "}
             </span>
         );
     }
 
-    return <span className={`space ${tile.Bonus}`} />;
+    return <span onClick={onClick} className={`space ${tile.Bonus}`} />;
 }

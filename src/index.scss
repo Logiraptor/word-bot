@@ -1,0 +1,80 @@
+.space {
+    content: " ";
+    background-color: #fdf4e2;
+    position: relative;
+    margin: 0.25em;
+    width: 2em;
+    padding: 0.25em 0;
+    min-height: 2em;
+    text-align: center;
+    vertical-align: bottom;
+    display: inline-block;
+    border: 1px solid grey;
+    box-sizing: border-box;
+}
+
+.board {
+    font-size: 1.5em;
+}
+
+.space.DW {
+    background-color: pink;
+}
+
+.space.TW {
+    background-color: red;
+}
+
+.space.TL {
+    background-color: darkblue;
+}
+
+.space.DL {
+    background-color: lightblue;
+}
+
+.letter {
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.score {
+    position: absolute;
+    top: 50%;
+    left: 70%;
+    font-size: 0.50em;
+}
+
+.tile {
+    background-color: #ffdc99;
+}
+
+.tile.blank {
+    color: grey;
+}
+
+.rack {
+    width: 100%;
+    min-height: 2em;
+    font-size: 1.5em;
+    background-color: grey;
+}
+
+.rack.mini {
+    font-size: 0.75em;
+}
+
+.rack:focus {
+    background-color: lightgray;
+}
+
+.panel {
+    min-width: 400px;
+    float: left;
+    height: 100%;
+}
+
+.scroll {
+    height: 400px;
+    overflow: auto;
+}

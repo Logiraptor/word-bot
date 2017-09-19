@@ -2,6 +2,7 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { RackInput, Tile } from "./rack";
 import { Board, BoardView } from "./board";
+import "./index.scss";
 
 interface Move {
     tiles: Tile[];
@@ -143,7 +144,7 @@ class App extends React.Component<{}, State> {
                 <div className="panel">
                     <h1>Scrabble</h1>
 
-                    {this.state.moves.map(this.renderMove)}
+                    <div className="scroll">{this.state.moves.map(this.renderMove)}</div>
 
                     <button
                         className="btn primary"

@@ -5,8 +5,7 @@
         "**/.hg": true,
         "**/CVS": true,
         "**/.DS_Store": true,
-        "public/*.js": true,
-        "public/*.map": true,
-        "public/*.json": true
+        "public": true,
+        "node_modules": true
     }
 }

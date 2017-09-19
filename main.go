@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -219,6 +220,73 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir("public")))
 
 	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+}
+
+func checkWords() {
+
+	words, err := loadWords()
+	if err != nil {
+		panic(err)
+	}
+
+	start := 0
+	for i := range words {
+		if words[i] == "zorilla" {
+			start = i
+		}
+	}
+
+	output, err := os.OpenFile("fast-words.csv", os.O_RDWR|os.O_APPEND, 0660)
+	if err != nil {
+		panic(err)
+	}
+	defer output.Close()
+
+	type Result struct {
+		Word, Definition, Error string
+	}
+
+	jobs := make(chan string, 100)
+	results := make(chan Result, 100)
+	for i := 0; i < 100; i++ {
+		go func() {
+			for j := range jobs {
+				definition, err := defineWord(j)
+				errString := ""
+				if err != nil {
+					errString = err.Error()
+				}
+				results <- Result{
+					Word:       j,
+					Error:      errString,
+					Definition: definition,
+				}
+			}
+		}()
+	}
+
+	go func() {
+		for _, word := range words[start:] {
+			jobs <- word
+		}
+		close(jobs)
+	}()
+
+	wr := csv.NewWriter(output)
+	for res := range results {
+		err = wr.Write([]string{
+			res.Word,
+			res.Definition,
+			res.Error,
+		})
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(res.Word, err == nil)
+		wr.Flush()
+	}
+	wr.Flush()
+
 }
 
 func aiVsHumanGame() {
