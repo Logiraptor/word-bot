@@ -1,4 +1,4 @@
-package main
+package wordlist
 
 type Trie struct {
 	nodes    [26]*Trie

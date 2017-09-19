@@ -5,7 +5,7 @@ import * as ExtractTextPlugin from "extract-text-webpack-plugin";
 let __dirname: string;
 
 const config: webpack.Configuration = {
-    entry: __dirname + "/src/main.tsx",
+    entry: __dirname + "/main.tsx",
     output: {
         path: __dirname + "/public",
         filename: "app.bundle.js",

@@ -1,10 +1,22 @@
-package main
+package core
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func toTiles(word string) []Tile {
+	return MakeTiles(MakeWord(word), strings.Repeat("x", len(word)))
+}
+
+type fakeWordList struct{}
+
+func (fakeWordList) Contains(word Word) bool {
+	// TODO: make this work
+	return true
+}
 
 func assertScore(t *testing.T, b *Board, score Score, word []Tile, row, col int, dir Direction) {
 	t.Helper()
@@ -65,37 +77,37 @@ func TestConversions(t *testing.T) {
 
 func TestValidation(t *testing.T) {
 	b := NewBoard()
-	result := b.ValidateMove(toTiles("dugz"), 7, 7, Horizontal)
+	result := b.ValidateMove(toTiles("dugz"), 7, 7, Horizontal, fakeWordList{})
 	assert.Equal(t, false, result)
 }
 
 func TestMultiValidationSuccess(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(toTiles("handy"), 7, 7, Horizontal)
-	result := b.ValidateMove(toTiles("stone"), 6, 5, Horizontal)
+	result := b.ValidateMove(toTiles("stone"), 6, 5, Horizontal, fakeWordList{})
 	assert.Equal(t, true, result)
 }
 
 func TestMultiValidation(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(toTiles("handy"), 7, 7, Horizontal)
-	result := b.ValidateMove(toTiles("stones"), 6, 5, Horizontal)
+	result := b.ValidateMove(toTiles("stones"), 6, 5, Horizontal, fakeWordList{})
 	assert.Equal(t, false, result)
 }
 
 func TestValidationDanglingWords(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(toTiles("handy"), 7, 7, Horizontal)
-	result := b.ValidateMove(toTiles("stones"), 5, 5, Horizontal)
+	result := b.ValidateMove(toTiles("stones"), 5, 5, Horizontal, fakeWordList{})
 	assert.Equal(t, false, result)
 }
 
 func TestValidationOverflowingWords(t *testing.T) {
 	b := NewBoard()
-	x := b.ValidateMove(toTiles("alfresco"), 7, 7, Horizontal)
+	x := b.ValidateMove(toTiles("alfresco"), 7, 7, Horizontal, fakeWordList{})
 	assert.Equal(t, true, x)
 	b.PlaceTiles(toTiles("alfresco"), 7, 7, Horizontal)
-	result := b.ValidateMove(toTiles("tabarded"), 6, 14, Horizontal)
+	result := b.ValidateMove(toTiles("tabarded"), 6, 14, Horizontal, fakeWordList{})
 	if !assert.Equal(t, false, result) {
 		b.Print()
 	}
@@ -106,7 +118,7 @@ func TestValidationOverflowingWords(t *testing.T) {
 func TestJint(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(toTiles("tusseh"), 14, 0, Horizontal)
-	result := b.ValidateMove(toTiles("jin"), 11, 0, Vertical)
+	result := b.ValidateMove(toTiles("jin"), 11, 0, Vertical, fakeWordList{})
 	assert.False(t, result)
 }
 
@@ -117,7 +129,7 @@ func TestBridgingWords(t *testing.T) {
 	b.PlaceTiles(toTiles("oard"), 7, 7, Vertical)
 	b.PlaceTiles(toTiles("ravel"), 7, 9, Vertical)
 
-	result := b.ValidateMove(toTiles("ae"), 10, 7, Horizontal)
+	result := b.ValidateMove(toTiles("ae"), 10, 7, Horizontal, fakeWordList{})
 	assert.True(t, result)
 
 	words := b.FindNewWords(toTiles("ae"), 10, 7, Horizontal)

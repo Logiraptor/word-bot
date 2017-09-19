@@ -5,7 +5,7 @@
         "**/.hg": true,
         "**/CVS": true,
         "**/.DS_Store": true,
-        "public": true,
-        "node_modules": true
+        "src/frontend/public": true,
+        "src/frontend/node_modules": true
     }
 }

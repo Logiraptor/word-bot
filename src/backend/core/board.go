@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -8,11 +8,46 @@ import (
 	"github.com/fatih/color"
 )
 
+// ConsumableRack manages a rack of tiles and allows efficient consumption of tiles
+type ConsumableRack struct {
+	rack     []Tile
+	consumed int
+}
+
+// Consume uses up a tile in the rack
+func (c ConsumableRack) Consume(i int) ConsumableRack {
+	return ConsumableRack{
+		rack:     c.rack,
+		consumed: c.consumed | (1 << uint(i)),
+	}
+}
+
+// CanConsume returns true if the ith tile is available to use
+func (c ConsumableRack) CanConsume(i int) bool {
+	return c.consumed&(1<<uint(i)) == 0
+}
+
+// WordList is used to validate words
+type WordList interface {
+	Contains(Word) bool
+}
+
+// Tile represents an actual physical tile on the board
 type Tile int
+
+// Letter represents an abstract letter (but more efficient to use than a rune)
 type Letter int
+
+// Direction is either Horizontal or Verical
 type Direction bool
+
+// Score is a point value
 type Score int
+
+// Bonus is a point modifier
 type Bonus = Score
+
+// Word is a collection of letters
 type Word []Letter
 
 func bonusToString(b Bonus) string {
@@ -36,31 +71,39 @@ func (t Tile) String() string {
 	return string(tile2Rune(t))
 }
 
-const NoTile = -1
-const BlankTileBit = 1 << 10
-const LetterMask = 1<<7 - 1
+// IsNoTile returns true if a tile is literally non existent
+func (t Tile) IsNoTile() bool {
+	return t == -1
+}
 
+const blankTileBit = 1 << 10
+const letterMask = 1<<7 - 1
+
+// Direction constants
 const (
 	Vertical   Direction = true
 	Horizontal           = !Vertical
 )
 
+// Shorthands for bonuses
 const (
-	__ Bonus = iota
+	xx Bonus = iota
 	DW
 	TW
 	DL
 	TL
 )
 
+// Longer names for bonus spaces
 const (
-	None         = __
+	None         = xx
 	DoubleWord   = DW
 	TripleWord   = TW
 	DoubleLetter = DL
 	TripleLetter = TL
 )
 
+// PlacedWord represents a set of tiles placed on a board
 type PlacedWord struct {
 	word      []Tile
 	row, col  int
@@ -79,6 +122,7 @@ func (d Direction) String() string {
 	return "Vertical"
 }
 
+// Offsets returns a direction vector for moving in the direction
 func (d Direction) Offsets() (dRow, dCol int) {
 	if d == Horizontal {
 		return 0, 1
@@ -86,6 +130,7 @@ func (d Direction) Offsets() (dRow, dCol int) {
 	return 1, 0
 }
 
+// PointValue returns the Score associated with a Tile
 func (t Tile) PointValue() Score {
 	if t.IsBlank() {
 		return 0
@@ -93,55 +138,58 @@ func (t Tile) PointValue() Score {
 	return letterValues[t]
 }
 
+// IsBlank returns true for blank tiles
 func (t Tile) IsBlank() bool {
-	return t&BlankTileBit != 0
+	return t&blankTileBit != 0
 }
 
+// ToLetter converts a tile to the letter it represents
 func (t Tile) ToLetter() Letter {
-	if t.IsBlank() {
-		return Letter(t & LetterMask)
-	}
-	return Letter(t & LetterMask)
+	return Letter(t & letterMask)
 }
 
-var normalBonus [15][15]Bonus = [...][15]Bonus{
-	{TW, __, __, DL, __, __, __, TW, __, __, __, DL, __, __, TW},
-	{__, DW, __, __, __, TL, __, __, __, TL, __, __, __, DW, __},
-	{__, __, DW, __, __, __, DL, __, DL, __, __, __, DW, __, __},
-	{DL, __, __, DW, __, __, __, DL, __, __, __, DW, __, __, DL},
-	{__, __, __, __, DW, __, __, __, __, __, DW, __, __, __, __},
-	{__, TL, __, __, __, TL, __, __, __, TL, __, __, __, TL, __},
-	{__, __, DL, __, __, __, DL, __, DL, __, __, __, DL, __, __},
-	{TW, __, __, DL, __, __, __, DW, __, __, __, DL, __, __, TW},
-	{__, __, DL, __, __, __, DL, __, DL, __, __, __, DL, __, __},
-	{__, TL, __, __, __, TL, __, __, __, TL, __, __, __, TL, __},
-	{__, __, __, __, DW, __, __, __, __, __, DW, __, __, __, __},
-	{DL, __, __, DW, __, __, __, DL, __, __, __, DW, __, __, DL},
-	{__, __, DW, __, __, __, DL, __, DL, __, __, __, DW, __, __},
-	{__, DW, __, __, __, TL, __, __, __, TL, __, __, __, DW, __},
-	{TW, __, __, DL, __, __, __, TW, __, __, __, DL, __, __, TW},
+var normalBonus = [...][15]Bonus{
+	{TW, xx, xx, DL, xx, xx, xx, TW, xx, xx, xx, DL, xx, xx, TW},
+	{xx, DW, xx, xx, xx, TL, xx, xx, xx, TL, xx, xx, xx, DW, xx},
+	{xx, xx, DW, xx, xx, xx, DL, xx, DL, xx, xx, xx, DW, xx, xx},
+	{DL, xx, xx, DW, xx, xx, xx, DL, xx, xx, xx, DW, xx, xx, DL},
+	{xx, xx, xx, xx, DW, xx, xx, xx, xx, xx, DW, xx, xx, xx, xx},
+	{xx, TL, xx, xx, xx, TL, xx, xx, xx, TL, xx, xx, xx, TL, xx},
+	{xx, xx, DL, xx, xx, xx, DL, xx, DL, xx, xx, xx, DL, xx, xx},
+	{TW, xx, xx, DL, xx, xx, xx, DW, xx, xx, xx, DL, xx, xx, TW},
+	{xx, xx, DL, xx, xx, xx, DL, xx, DL, xx, xx, xx, DL, xx, xx},
+	{xx, TL, xx, xx, xx, TL, xx, xx, xx, TL, xx, xx, xx, TL, xx},
+	{xx, xx, xx, xx, DW, xx, xx, xx, xx, xx, DW, xx, xx, xx, xx},
+	{DL, xx, xx, DW, xx, xx, xx, DL, xx, xx, xx, DW, xx, xx, DL},
+	{xx, xx, DW, xx, xx, xx, DL, xx, DL, xx, xx, xx, DW, xx, xx},
+	{xx, DW, xx, xx, xx, TL, xx, xx, xx, TL, xx, xx, xx, DW, xx},
+	{TW, xx, xx, DL, xx, xx, xx, TW, xx, xx, xx, DL, xx, xx, TW},
 }
 
+// Cell represents a spot on the board
 type Cell struct {
 	Bonus Bonus
 	Tile  Tile
 }
 
+// Board is a regular scrabble board
 type Board struct {
 	Cells [15][15]Cell
 }
 
+// NewBoard initializes an empty board
 func NewBoard() *Board {
 	b := new(Board)
 	for i, row := range b.Cells {
 		for j := range row {
-			b.Cells[i][j].Tile = NoTile
+			b.Cells[i][j].Tile = -1
 			b.Cells[i][j].Bonus = normalBonus[i][j]
 		}
 	}
 	return b
 }
 
+// Save encodes a representation of the board to the given file
 func (b *Board) Save(filename string) error {
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)
 	if err != nil {
@@ -151,15 +199,16 @@ func (b *Board) Save(filename string) error {
 	return json.NewEncoder(f).Encode(b)
 }
 
+// HasTile returns true if the given spot is occupied
 func (b *Board) HasTile(row, col int) bool {
-	if row < 0 || row >= 15 ||
-		col < 0 || col >= 15 {
+	if b.outOfBounds(row, col) {
 		return false
 	}
-	return b.Cells[row][col].Tile != NoTile
+	return !b.Cells[row][col].Tile.IsNoTile()
 }
 
-func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction) bool {
+// ValidateMove returns true if the given move is legal
+func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction, wordList WordList) bool {
 
 	// Check that it connects to other words
 	connectsToOtherWords := false
@@ -194,13 +243,14 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction) boo
 
 	words := b.FindNewWords(word, row, col, direction)
 	for _, word := range words {
-		if !wordDB.Contains(tiles2Word(word.word)) {
+		if !wordList.Contains(tiles2Word(word.word)) {
 			return false
 		}
 	}
 	return true
 }
 
+// Score computes the score for a given move. Score does not validate the move.
 func (b *Board) Score(word []Tile, row, col int, direction Direction) Score {
 	words := b.FindNewWords(word, row, col, direction)
 
@@ -258,6 +308,7 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 	return sum*wordBonus + additionalBonus
 }
 
+// FindNewWords returns all net-new words produced by the given move.
 func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []PlacedWord {
 	dRow, dCol := direction.Offsets()
 	words := []PlacedWord{}
@@ -302,6 +353,7 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 	return words
 }
 
+// GrowWord finds the full contiguous word at a given position
 func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool) {
 	dRow, dCol := dir.Offsets()
 
@@ -318,6 +370,7 @@ func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool)
 	}, len(word) > 1
 }
 
+// PlaceTiles places tiles. It does not validate the move.
 func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) []Tile {
 	dRow, dCol := direction.Offsets()
 	progress := 0
@@ -340,6 +393,7 @@ func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) []Ti
 	return tiles
 }
 
+// Print prints the board to the console
 func (b *Board) Print() {
 	for i, row := range b.Cells {
 		for j, cell := range row {
@@ -347,7 +401,7 @@ func (b *Board) Print() {
 
 			letter := ' '
 			cellColor := color.New(color.FgBlack)
-			if cell.Tile != NoTile {
+			if b.HasTile(i, j) {
 				letter = tile2Rune(cell.Tile)
 				cellColor = cellColor.Add(color.BgMagenta)
 			} else {
@@ -375,7 +429,7 @@ func (b *Board) scan(row, col, dRow, dCol int) []Tile {
 	letters := []Tile{}
 	for col >= 0 && col < 15 &&
 		row >= 0 && row < 15 &&
-		b.Cells[row][col].Tile != NoTile {
+		b.HasTile(row, col) {
 		letters = append(letters, b.Cells[row][col].Tile)
 		row += dRow
 		col += dCol
@@ -400,7 +454,7 @@ func rune2Tile(r rune, blank bool) Tile {
 
 func letter2Tile(l Letter, blank bool) Tile {
 	if blank {
-		return Tile(l | BlankTileBit)
+		return Tile(l | blankTileBit)
 	}
 	return Tile(l)
 }
@@ -429,6 +483,7 @@ func tiles2Word(tiles []Tile) Word {
 	return word
 }
 
+// MakeWord converts a string to a Word
 func MakeWord(word string) Word {
 	output := make(Word, len(word))
 	for i, r := range word {
@@ -437,7 +492,7 @@ func MakeWord(word string) Word {
 	return output
 }
 
-// MakeTiles should be used like: MakeTiles(word, "xx x")
+// MakeTiles should be used like so: MakeTiles(word, "xx x") TODO: make this an example
 func MakeTiles(word Word, mask string) []Tile {
 	output := make([]Tile, len(word))
 	for i, letter := range word {

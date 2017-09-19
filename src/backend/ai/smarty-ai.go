@@ -1,4 +1,4 @@
-package main
+package ai
 
 import (
 	"fmt"
@@ -13,22 +13,6 @@ func NewSmartyAI(board *Board) *SmartyAI {
 	return &SmartyAI{
 		board: board,
 	}
-}
-
-type ConsumableRack struct {
-	rack     []Tile
-	consumed int
-}
-
-func (c ConsumableRack) Consume(i int) ConsumableRack {
-	return ConsumableRack{
-		rack:     c.rack,
-		consumed: c.consumed | (1 << uint(i)),
-	}
-}
-
-func (c ConsumableRack) CanConsume(i int) bool {
-	return c.consumed&(1<<uint(i)) == 0
 }
 
 func (b *SmartyAI) FindMoves(tiles []Tile) []ScoredMove {
