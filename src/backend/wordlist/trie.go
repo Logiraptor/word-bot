@@ -1,5 +1,7 @@
 package wordlist
 
+import "word-bot/src/backend/core"
+
 type Trie struct {
 	nodes    [26]*Trie
 	terminal bool
@@ -9,7 +11,7 @@ func NewTrie() *Trie {
 	return &Trie{}
 }
 
-func (t *Trie) Contains(word Word) bool {
+func (t *Trie) Contains(word core.Word) bool {
 	current := t
 	for _, letter := range word {
 		if current.nodes[letter] == nil {
@@ -20,7 +22,7 @@ func (t *Trie) Contains(word Word) bool {
 	return current.terminal
 }
 
-func (t *Trie) CanBranch(tile Tile) (*Trie, bool) {
+func (t *Trie) CanBranch(tile core.Tile) (*Trie, bool) {
 	next := t.nodes[tile.ToLetter()]
 	return next, next != nil
 }
@@ -28,7 +30,7 @@ func (t *Trie) CanBranch(tile Tile) (*Trie, bool) {
 func (t *Trie) AddWord(word string) {
 	current := t
 	for _, letter := range word {
-		i := rune2Letter(letter)
+		i := core.Rune2Letter(letter)
 		if current.nodes[i] == nil {
 			current.nodes[i] = NewTrie()
 		}

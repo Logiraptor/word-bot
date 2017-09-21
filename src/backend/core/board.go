@@ -10,14 +10,21 @@ import (
 
 // ConsumableRack manages a rack of tiles and allows efficient consumption of tiles
 type ConsumableRack struct {
-	rack     []Tile
+	Rack     []Tile
 	consumed int
+}
+
+func NewConsumableRack(tiles []Tile) ConsumableRack {
+	return ConsumableRack{
+		Rack:     tiles,
+		consumed: 0,
+	}
 }
 
 // Consume uses up a tile in the rack
 func (c ConsumableRack) Consume(i int) ConsumableRack {
 	return ConsumableRack{
-		rack:     c.rack,
+		Rack:     c.Rack,
 		consumed: c.consumed | (1 << uint(i)),
 	}
 }
@@ -105,14 +112,14 @@ const (
 
 // PlacedWord represents a set of tiles placed on a board
 type PlacedWord struct {
-	word      []Tile
-	row, col  int
-	direction Direction
+	Word      []Tile
+	Row, Col  int
+	Direction Direction
 }
 
 func (p PlacedWord) String() string {
-	word := tiles2String(p.word)
-	return fmt.Sprintf("(%d,%d,%v: %s)", p.row, p.col, p.direction, word)
+	word := tiles2String(p.Word)
+	return fmt.Sprintf("(%d,%d,%v: %s)", p.Row, p.Col, p.Direction, word)
 }
 
 func (d Direction) String() string {
@@ -201,7 +208,7 @@ func (b *Board) Save(filename string) error {
 
 // HasTile returns true if the given spot is occupied
 func (b *Board) HasTile(row, col int) bool {
-	if b.outOfBounds(row, col) {
+	if b.OutOfBounds(row, col) {
 		return false
 	}
 	return !b.Cells[row][col].Tile.IsNoTile()
@@ -218,7 +225,7 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction, wor
 		tileRow := row + dRow*progress
 		tileCol := col + dCol*progress
 
-		if b.outOfBounds(tileRow, tileCol) {
+		if b.OutOfBounds(tileRow, tileCol) {
 			return false
 		}
 		if !b.HasTile(tileRow, tileCol) {
@@ -243,7 +250,7 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction, wor
 
 	words := b.FindNewWords(word, row, col, direction)
 	for _, word := range words {
-		if !wordList.Contains(tiles2Word(word.word)) {
+		if !wordList.Contains(tiles2Word(word.Word)) {
 			return false
 		}
 	}
@@ -263,13 +270,13 @@ func (b *Board) Score(word []Tile, row, col int, direction Direction) Score {
 
 	total := Score(0)
 	for _, word := range words {
-		wordScore := b.scoreWord(word.word, word.row, word.col, word.direction)
+		wordScore := b.scoreWord(word.Word, word.Row, word.Col, word.Direction)
 		total += wordScore
 	}
 	return total
 }
 
-func (b *Board) outOfBounds(row, col int) bool {
+func (b *Board) OutOfBounds(row, col int) bool {
 	return row < 0 || row >= 15 || col < 0 || col >= 15
 }
 
@@ -282,7 +289,7 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 	for i, letter := range word {
 		tileRow := row + (i * dRow)
 		tileCol := col + (i * dCol)
-		if b.outOfBounds(tileRow, tileCol) {
+		if b.OutOfBounds(tileRow, tileCol) {
 			panic(fmt.Sprintf("attempted to score word %s - OUT OF BOUNDS (moving [%d,%d])", PlacedWord{word, row, col, direction}, dRow, dCol))
 		}
 		letterBonus := Bonus(1)
@@ -318,7 +325,7 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 
 	tileRow := row + dRow*progress
 	tileCol := col + dCol*progress
-	for !b.outOfBounds(tileRow, tileCol) && wordPos < len(word) {
+	for !b.OutOfBounds(tileRow, tileCol) && wordPos < len(word) {
 
 		if b.HasTile(tileRow, tileCol) {
 			wordLetters = append(wordLetters, b.Cells[tileRow][tileCol].Tile)
@@ -346,8 +353,8 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 	wordLetters = append(append(lhs, wordLetters...), rhs...)
 
 	words = append(words, PlacedWord{
-		col: col - dCol*len(lhs), row: row - dRow*len(lhs),
-		direction: direction, word: wordLetters,
+		Col: col - dCol*len(lhs), Row: row - dRow*len(lhs),
+		Direction: direction, Word: wordLetters,
 	})
 
 	return words
@@ -363,10 +370,10 @@ func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool)
 	word := append(append(lhs, l), rhs...)
 
 	return PlacedWord{
-		col:       col - len(lhs)*dCol,
-		row:       row - len(lhs)*dRow,
-		direction: dir,
-		word:      word,
+		Col:       col - len(lhs)*dCol,
+		Row:       row - len(lhs)*dRow,
+		Direction: dir,
+		Word:      word,
 	}, len(word) > 1
 }
 
@@ -379,7 +386,7 @@ func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) []Ti
 		tileRow := row + progress*dRow
 		tileCol := col + progress*dCol
 
-		if b.outOfBounds(tileRow, tileCol) {
+		if b.OutOfBounds(tileRow, tileCol) {
 			panic(fmt.Sprintf("attempted to place word %s - OUT OF BOUNDS (moving [%d,%d]) (at [%d,%d])",
 				PlacedWord{tiles, row, col, direction}, dRow, dCol, tileRow, tileCol))
 		}
@@ -444,12 +451,14 @@ func reverse(tiles []Tile) {
 	}
 }
 
-func rune2Letter(r rune) Letter {
+// Rune2Letter returns the Letter corresponding to a rune in ['a'..'z']
+func Rune2Letter(r rune) Letter {
 	return Letter(r - 'a')
 }
 
-func rune2Tile(r rune, blank bool) Tile {
-	return letter2Tile(rune2Letter(r), blank)
+// Rune2Tile constructs a tile
+func Rune2Tile(r rune, blank bool) Tile {
+	return letter2Tile(Rune2Letter(r), blank)
 }
 
 func letter2Tile(l Letter, blank bool) Tile {
@@ -487,7 +496,7 @@ func tiles2Word(tiles []Tile) Word {
 func MakeWord(word string) Word {
 	output := make(Word, len(word))
 	for i, r := range word {
-		output[i] = rune2Letter(r)
+		output[i] = Rune2Letter(r)
 	}
 	return output
 }

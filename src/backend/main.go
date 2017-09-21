@@ -6,18 +6,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
-	"time"
+	"word-bot/src/backend/ai"
+	"word-bot/src/backend/core"
+	"word-bot/src/backend/wordlist"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-var wordDB *Trie
+var wordDB *wordlist.Trie
 
 func init() {
 	words, err := loadWords()
@@ -25,48 +26,18 @@ func init() {
 		panic(err)
 	}
 
-	wordDB = NewTrie()
+	wordDB = wordlist.NewTrie()
 	for _, word := range words {
 		wordDB.AddWord(word)
 	}
 }
 
 type AI interface {
-	FindMoves(rack []Tile) []ScoredMove
+	FindMoves(rack []core.Tile) []ai.ScoredMove
 }
 
-type Player struct {
-	name  string
-	rack  Rack
-	score Score
-}
-
-func (p *Player) Play(ai AI, board *Board, bag *Bag) {
-	moves := ai.FindMoves(p.rack)
-	if len(moves) > 0 {
-		bestMove := moves[0]
-		fmt.Println(p.name, "would play:", bestMove)
-		p.score += bestMove.Score
-
-		used := board.PlaceTiles(bestMove.word, bestMove.row, bestMove.col, bestMove.direction)
-		p.rack.Remove(used)
-		p.rack = append(p.rack, Rack(bag.Draw(7-len(p.rack)))...)
-		fmt.Println(p.name, "rack is now", p.rack)
-
-		board.Print()
-	} else {
-		fmt.Println(p.name, "passes")
-	}
-}
-
-type GameState struct {
-	board   *Board
-	bag     *Bag
-	players []*Player
-}
-
-func toTiles(word string) []Tile {
-	return MakeTiles(MakeWord(word), strings.Repeat("x", len(word)))
+func toTiles(word string) []core.Tile {
+	return core.MakeTiles(core.MakeWord(word), strings.Repeat("x", len(word)))
 }
 
 type MoveRequest struct {
@@ -77,7 +48,7 @@ type MoveRequest struct {
 type TileJS struct {
 	Letter string
 	Blank  bool
-	Value  Score
+	Value  core.Score
 	Bonus  string
 }
 
@@ -89,32 +60,32 @@ type Move struct {
 }
 
 type ScoredMoveJS struct {
-	Tiles []TileJS `json:"tiles"`
-	Row   int      `json:"row"`
-	Col   int      `json:"col"`
-	Dir   string   `json:"direction"` // vertical / horizontal
-	Score Score    `json:"score"`
+	Tiles []TileJS   `json:"tiles"`
+	Row   int        `json:"row"`
+	Col   int        `json:"col"`
+	Dir   string     `json:"direction"` // vertical / horizontal
+	Score core.Score `json:"score"`
 }
 
 type RenderedBoard struct {
 	Board  [15][15]TileJS
-	Scores []Score
+	Scores []core.Score
 }
 
-func jsTilesToTiles(jsTiles []TileJS) []Tile {
-	tiles := []Tile{}
+func jsTilesToTiles(jsTiles []TileJS) []core.Tile {
+	tiles := []core.Tile{}
 	for _, t := range jsTiles {
 		letters := []rune(t.Letter)
 		letter := 'a'
 		if len(letters) > 0 {
 			letter = letters[0]
 		}
-		tiles = append(tiles, rune2Tile(letter, t.Blank))
+		tiles = append(tiles, core.Rune2Tile(letter, t.Blank))
 	}
 	return tiles
 }
 
-func tiles2JsTiles(tiles []Tile) []TileJS {
+func tiles2JsTiles(tiles []core.Tile) []TileJS {
 	jsTiles := []TileJS{}
 	for _, t := range tiles {
 		jsTiles = append(jsTiles, TileJS{
@@ -139,28 +110,28 @@ func getMove(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	b := NewBoard()
+	b := core.NewBoard()
 	for _, move := range moves.Moves {
-		dir := Vertical
+		dir := core.Vertical
 		if move.Dir == "horizontal" {
-			dir = Horizontal
+			dir = core.Horizontal
 		}
 
 		b.PlaceTiles(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
 	}
 
-	ai := NewSmartyAI(b)
+	ai := ai.NewSmartyAI(b, wordDB, wordDB)
 	play := ai.FindMoves(jsTilesToTiles(moves.Rack))[0]
 
 	dirString := "horizontal"
-	if play.direction == Vertical {
+	if play.Direction == core.Vertical {
 		dirString = "vertical"
 	}
 
 	json.NewEncoder(rw).Encode(ScoredMoveJS{
-		Tiles: tiles2JsTiles(play.word),
-		Row:   play.row,
-		Col:   play.col,
+		Tiles: tiles2JsTiles(play.Word),
+		Row:   play.Row,
+		Col:   play.Col,
 		Dir:   dirString,
 		Score: play.Score,
 	})
@@ -180,12 +151,12 @@ func renderBoard(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	var output RenderedBoard
-	output.Scores = make([]Score, len(moves.Moves))
-	b := NewBoard()
+	output.Scores = make([]core.Score, len(moves.Moves))
+	b := core.NewBoard()
 	for i, move := range moves.Moves {
-		dir := Vertical
+		dir := core.Vertical
 		if move.Dir == "horizontal" {
-			dir = Horizontal
+			dir = core.Horizontal
 		}
 		output.Scores[i] = b.Score(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
 		b.PlaceTiles(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
@@ -193,7 +164,7 @@ func renderBoard(rw http.ResponseWriter, req *http.Request) {
 
 	for i, row := range b.Cells {
 		for j, cell := range row {
-			if cell.Tile != NoTile {
+			if !cell.Tile.IsNoTile() {
 				output.Board[i][j] = TileJS{
 					Blank:  cell.Tile.IsBlank(),
 					Letter: string(tile2Rune(cell.Tile)),
@@ -287,95 +258,6 @@ func checkWords() {
 	}
 	wr.Flush()
 
-}
-
-func aiVsHumanGame() {
-	rand.Seed(time.Now().Unix())
-
-	var err error
-	b := NewBoard()
-	// f, err := os.Open("./game.json")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// err = json.NewDecoder(f).Decode(b)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	ai := NewSmartyAI(b)
-	var (
-		word      string
-		row, col  int
-		direction Direction
-	)
-	for {
-		err = b.Save("./game.json")
-		if err != nil {
-			panic(err)
-		}
-		b.Print()
-
-		fmt.Println("Enter my tiles as a string with spaces for blanks")
-		in := bufio.NewReader(os.Stdin)
-		line, err := in.ReadString('\n')
-		if err != nil {
-			panic(err)
-		}
-
-		moves := ai.FindMoves(toTiles(line[:len(line)-1]))
-		if len(moves) > 0 {
-			move := moves[0]
-			fmt.Printf("I play %s (%s) at %d, %d for %d points\n", tiles2String(move.word), move.direction, move.row, move.col, move.Score)
-			b.PlaceTiles(move.word, move.row, move.col, move.direction)
-		}
-
-		err = b.Save("./game.json")
-		if err != nil {
-			panic(err)
-		}
-		b.Print()
-
-		fmt.Println("Enter Opponent's move as: tiles row col vertical?")
-		fmt.Scanln(&word, &row, &col, &direction)
-
-		tiles := toTiles(word)
-		b.PlaceTiles(tiles, row, col, direction)
-	}
-}
-
-func aiVsAiGame() {
-	gs := new(GameState)
-	gs.board = NewBoard()
-	gs.board.Print()
-
-	gs.bag = NewBag()
-	gs.bag.Shuffle()
-
-	bob := new(Player)
-	bob.name = "bob"
-	bob.rack = Rack(gs.bag.Draw(7))
-
-	alice := new(Player)
-	alice.name = "alice"
-	alice.rack = Rack(gs.bag.Draw(7))
-
-	// bf := NewBruteForceAI(gs.board)
-	ai := NewSmartyAI(gs.board)
-
-	gs.players = []*Player{bob, alice}
-
-	for len(bob.rack) > 0 && len(alice.rack) > 0 {
-		for _, player := range gs.players {
-			player.Play(ai, gs.board, gs.bag)
-		}
-
-		fmt.Println("Bob:", bob.score, "Alice:", alice.score)
-
-		gs.board.Print()
-	}
-
-	fmt.Println("GAME OVER")
-	fmt.Println("Bob:", bob.score, "Alice:", alice.score)
 }
 
 func loadWords() ([]string, error) {

@@ -70,7 +70,7 @@ func TestBlankTiles(t *testing.T) {
 }
 
 func TestConversions(t *testing.T) {
-	tile := rune2Tile('o', true)
+	tile := Rune2Tile('o', true)
 	r := letter2Rune(tile.ToLetter())
 	assert.Equal(t, r, 'o')
 }
@@ -134,7 +134,7 @@ func TestBridgingWords(t *testing.T) {
 
 	words := b.FindNewWords(toTiles("ae"), 10, 7, Horizontal)
 	assert.Len(t, words, 1)
-	if !assert.Equal(t, "rave", tiles2String(words[0].word)) {
+	if !assert.Equal(t, "rave", tiles2String(words[0].Word)) {
 		b.Print()
 	}
 }

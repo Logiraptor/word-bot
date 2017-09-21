@@ -3,45 +3,50 @@ package ai
 import (
 	"fmt"
 	"time"
+	"word-bot/src/backend/core"
 )
 
 type SmartyAI struct {
-	board *Board
+	board       *core.Board
+	wordList    core.WordList
+	searchSpace WordList
 }
 
-func NewSmartyAI(board *Board) *SmartyAI {
+func NewSmartyAI(board *core.Board, wordList core.WordList, searchSpace WordList) *SmartyAI {
 	return &SmartyAI{
-		board: board,
+		board:       board,
+		wordList:    wordList,
+		searchSpace: searchSpace,
 	}
 }
 
-func (b *SmartyAI) FindMoves(tiles []Tile) []ScoredMove {
+func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 
 	start := time.Now()
 	fmt.Println()
 	numMoves := 0
 	var bestMove ScoredMove
 
-	rack := ConsumableRack{rack: tiles, consumed: 0}
+	rack := core.NewConsumableRack(tiles)
 
 	for i := 0; i < 15; i++ {
 		for j := 0; j < 15; j++ {
-			b.Search(i, j, Horizontal, rack, wordDB, nil, func(word []Tile) {
+			b.Search(i, j, core.Horizontal, rack, b.searchSpace, nil, func(word []core.Tile) {
 				if len(word) == 0 {
 					return
 				}
 
-				if b.board.ValidateMove(word, i, j, Horizontal) {
+				if b.board.ValidateMove(word, i, j, core.Horizontal, b.wordList) {
 
 					numMoves++
-					score := b.board.Score(word, i, j, Horizontal)
+					score := b.board.Score(word, i, j, core.Horizontal)
 
 					if score > bestMove.Score {
-						newWord := make([]Tile, len(word))
+						newWord := make([]core.Tile, len(word))
 						copy(newWord, word)
 
 						current := ScoredMove{
-							PlacedWord: PlacedWord{newWord, i, j, Horizontal},
+							PlacedWord: core.PlacedWord{newWord, i, j, core.Horizontal},
 							Score:      score,
 						}
 
@@ -51,19 +56,19 @@ func (b *SmartyAI) FindMoves(tiles []Tile) []ScoredMove {
 				}
 			})
 
-			b.Search(i, j, Vertical, rack, wordDB, nil, func(word []Tile) {
+			b.Search(i, j, core.Vertical, rack, b.searchSpace, nil, func(word []core.Tile) {
 				if len(word) == 0 {
 					return
 				}
 
-				if b.board.ValidateMove(word, i, j, Vertical) {
-					newWord := make([]Tile, len(word))
+				if b.board.ValidateMove(word, i, j, core.Vertical, b.wordList) {
+					newWord := make([]core.Tile, len(word))
 					copy(newWord, word)
 
 					numMoves++
 					current := ScoredMove{
-						PlacedWord: PlacedWord{newWord, i, j, Vertical},
-						Score:      b.board.Score(newWord, i, j, Vertical),
+						PlacedWord: core.PlacedWord{newWord, i, j, core.Vertical},
+						Score:      b.board.Score(newWord, i, j, core.Vertical),
 					}
 
 					if current.Score > bestMove.Score {
@@ -79,19 +84,24 @@ func (b *SmartyAI) FindMoves(tiles []Tile) []ScoredMove {
 	fmt.Println()
 
 	fmt.Println("Finished in", dur)
-	if bestMove.word == nil {
+	if bestMove.Word == nil {
 		return nil
 	}
 	return []ScoredMove{bestMove}
 }
 
-func (s *SmartyAI) Search(i, j int, dir Direction, rack ConsumableRack, wordDB *Trie, prev []Tile, callback func([]Tile)) {
+type WordList interface {
+	IsTerminal() bool
+	CanBranch(t core.Tile) (WordList, bool)
+}
+
+func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordList, prev []core.Tile, callback func([]core.Tile)) {
 	dRow, dCol := dir.Offsets()
-	if wordDB.terminal {
+	if wordDB.IsTerminal() {
 		callback(prev)
 	}
 
-	if s.board.outOfBounds(i, j) {
+	if s.board.OutOfBounds(i, j) {
 		return
 	}
 	if s.board.HasTile(i, j) {
@@ -100,10 +110,10 @@ func (s *SmartyAI) Search(i, j int, dir Direction, rack ConsumableRack, wordDB *
 			s.Search(i+dRow, j+dCol, dir, rack, next, prev, callback)
 		}
 	} else {
-		for i, letter := range rack.rack {
+		for i, letter := range rack.Rack {
 			if letter.IsBlank() {
 				for r := 'a'; r <= 'z'; r++ {
-					letter := rune2Tile(r, true)
+					letter := core.Rune2Tile(r, true)
 					if next, ok := wordDB.CanBranch(letter); ok && rack.CanConsume(i) {
 						s.Search(i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, letter), callback)
 					}
