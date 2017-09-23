@@ -141,7 +141,7 @@ func TestBridgingWords(t *testing.T) {
 
 func TestConsumableRack(t *testing.T) {
 	c := ConsumableRack{
-		rack:     toTiles("abcd"),
+		Rack:     toTiles("abcd"),
 		consumed: 0,
 	}
 

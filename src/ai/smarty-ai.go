@@ -3,7 +3,7 @@ package ai
 import (
 	"fmt"
 	"time"
-	"word-bot/src/backend/core"
+	"word-bot/src/core"
 )
 
 type SmartyAI struct {

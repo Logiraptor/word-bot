@@ -11,9 +11,9 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"word-bot/src/backend/ai"
-	"word-bot/src/backend/core"
-	"word-bot/src/backend/wordlist"
+	"word-bot/src/ai"
+	"word-bot/src/core"
+	"word-bot/src/wordlist"
 
 	"github.com/PuerkitoBio/goquery"
 )
