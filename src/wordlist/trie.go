@@ -1,11 +1,16 @@
 package wordlist
 
-import "word-bot/src/backend/core"
+import (
+	"word-bot/src/backend/ai"
+	"word-bot/src/backend/core"
+)
 
 type Trie struct {
 	nodes    [26]*Trie
 	terminal bool
 }
+
+var _ ai.WordList = NewTrie()
 
 func NewTrie() *Trie {
 	return &Trie{}
@@ -22,7 +27,11 @@ func (t *Trie) Contains(word core.Word) bool {
 	return current.terminal
 }
 
-func (t *Trie) CanBranch(tile core.Tile) (*Trie, bool) {
+func (t *Trie) IsTerminal() bool {
+	return t.terminal
+}
+
+func (t *Trie) CanBranch(tile core.Tile) (ai.WordList, bool) {
 	next := t.nodes[tile.ToLetter()]
 	return next, next != nil
 }

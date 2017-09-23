@@ -90,7 +90,7 @@ func tiles2JsTiles(tiles []core.Tile) []TileJS {
 	for _, t := range tiles {
 		jsTiles = append(jsTiles, TileJS{
 			Blank:  t.IsBlank(),
-			Letter: string(tile2Rune(t)),
+			Letter: string(core.Tile2Rune(t)),
 			Value:  t.PointValue(),
 		})
 	}
@@ -167,16 +167,16 @@ func renderBoard(rw http.ResponseWriter, req *http.Request) {
 			if !cell.Tile.IsNoTile() {
 				output.Board[i][j] = TileJS{
 					Blank:  cell.Tile.IsBlank(),
-					Letter: string(tile2Rune(cell.Tile)),
+					Letter: string(core.Tile2Rune(cell.Tile)),
 					Value:  cell.Tile.PointValue(),
-					Bonus:  bonusToString(cell.Bonus),
+					Bonus:  cell.Bonus.ToString(),
 				}
 			} else {
 				output.Board[i][j] = TileJS{
 					Blank:  true,
 					Letter: "",
 					Value:  -1,
-					Bonus:  bonusToString(cell.Bonus),
+					Bonus:  cell.Bonus.ToString(),
 				}
 			}
 		}
@@ -188,7 +188,7 @@ func renderBoard(rw http.ResponseWriter, req *http.Request) {
 func main() {
 	http.HandleFunc("/play", getMove)
 	http.HandleFunc("/render", renderBoard)
-	http.Handle("/", http.FileServer(http.Dir("public")))
+	http.Handle("/", http.FileServer(http.Dir("frontend/public")))
 
 	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 }

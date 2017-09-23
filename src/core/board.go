@@ -57,7 +57,7 @@ type Bonus = Score
 // Word is a collection of letters
 type Word []Letter
 
-func bonusToString(b Bonus) string {
+func (b Bonus) ToString() string {
 	switch b {
 	case DW:
 		return "DW"
@@ -75,7 +75,7 @@ func (t Tile) String() string {
 	if t.IsBlank() {
 		return "_"
 	}
-	return string(tile2Rune(t))
+	return string(Tile2Rune(t))
 }
 
 // IsNoTile returns true if a tile is literally non existent
@@ -409,7 +409,7 @@ func (b *Board) Print() {
 			letter := ' '
 			cellColor := color.New(color.FgBlack)
 			if b.HasTile(i, j) {
-				letter = tile2Rune(cell.Tile)
+				letter = Tile2Rune(cell.Tile)
 				cellColor = cellColor.Add(color.BgMagenta)
 			} else {
 				switch cell.Bonus {
@@ -472,14 +472,14 @@ func letter2Rune(t Letter) rune {
 	return rune(t + 'a')
 }
 
-func tile2Rune(t Tile) rune {
+func Tile2Rune(t Tile) rune {
 	return letter2Rune(t.ToLetter())
 }
 
 func tiles2String(tiles []Tile) string {
 	word := ""
 	for _, l := range tiles {
-		word += string(tile2Rune(l))
+		word += string(Tile2Rune(l))
 	}
 	return word
 }
