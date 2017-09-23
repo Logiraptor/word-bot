@@ -1,8 +1,8 @@
 package wordlist
 
 import (
-	"word-bot/src/backend/ai"
-	"word-bot/src/backend/core"
+	"word-bot/ai"
+	"word-bot/core"
 )
 
 type Trie struct {

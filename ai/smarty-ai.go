@@ -3,7 +3,7 @@ package ai
 import (
 	"fmt"
 	"time"
-	"word-bot/src/core"
+	"word-bot/core"
 )
 
 type SmartyAI struct {
@@ -46,7 +46,7 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 						copy(newWord, word)
 
 						current := ScoredMove{
-							PlacedWord: core.PlacedWord{newWord, i, j, core.Horizontal},
+							PlacedWord: core.PlacedWord{Word: newWord,Row: i,Col: j,Direction: core.Horizontal},
 							Score:      score,
 						}
 

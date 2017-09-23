@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	"word-bot/src/core"
+	"word-bot/core"
 )
 
 type BruteForceAI struct {
