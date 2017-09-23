@@ -1,6 +1,7 @@
 package core
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -11,11 +12,30 @@ func toTiles(word string) []Tile {
 	return MakeTiles(MakeWord(word), strings.Repeat("x", len(word)))
 }
 
+func wordEqual(aStr string, bWord Word) bool {
+	aWord := MakeWord(aStr)
+	return reflect.DeepEqual(aWord, bWord)
+}
+
 type fakeWordList struct{}
 
 func (fakeWordList) Contains(word Word) bool {
-	// TODO: make this work
-	return true
+	words := []string{
+		"alfresco",
+		"rave",
+		"oh",
+		"na",
+		"en",
+		"stone",
+		"stones",
+	}
+
+	for _, x := range words {
+		if wordEqual(x, word) {
+			return true
+		}
+	}
+	return false
 }
 
 func assertScore(t *testing.T, b *Board, score Score, word []Tile, row, col int, dir Direction) {
