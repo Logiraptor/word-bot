@@ -120,7 +120,7 @@ func permute(rack []core.Tile) [][]core.Tile {
 
 	if first.IsBlank() {
 		for option := 'a'; option <= 'z'; option++ {
-			letter := core.Rune2Tile(option, true)
+			letter := core.Rune2Letter(option).ToTile(true)
 			for _, perm := range subPerm {
 				for i := range perm {
 					output = append(output, append(append(perm[:i:i], letter), perm[i:]...))

@@ -10,7 +10,7 @@ type Trie struct {
 	terminal bool
 }
 
-var _ ai.WordList = NewTrie()
+var _ ai.WordTree = NewTrie()
 
 func NewTrie() *Trie {
 	return &Trie{}
@@ -31,7 +31,7 @@ func (t *Trie) IsTerminal() bool {
 	return t.terminal
 }
 
-func (t *Trie) CanBranch(tile core.Tile) (ai.WordList, bool) {
+func (t *Trie) CanBranch(tile core.Tile) (ai.WordTree, bool) {
 	next := t.nodes[tile.ToLetter()]
 	return next, next != nil
 }

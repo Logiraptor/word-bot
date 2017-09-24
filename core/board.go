@@ -8,42 +8,10 @@ import (
 	"github.com/fatih/color"
 )
 
-// ConsumableRack manages a rack of tiles and allows efficient consumption of tiles
-type ConsumableRack struct {
-	Rack     []Tile
-	consumed int
-}
-
-func NewConsumableRack(tiles []Tile) ConsumableRack {
-	return ConsumableRack{
-		Rack:     tiles,
-		consumed: 0,
-	}
-}
-
-// Consume uses up a tile in the rack
-func (c ConsumableRack) Consume(i int) ConsumableRack {
-	return ConsumableRack{
-		Rack:     c.Rack,
-		consumed: c.consumed | (1 << uint(i)),
-	}
-}
-
-// CanConsume returns true if the ith tile is available to use
-func (c ConsumableRack) CanConsume(i int) bool {
-	return c.consumed&(1<<uint(i)) == 0
-}
-
 // WordList is used to validate words
 type WordList interface {
 	Contains(Word) bool
 }
-
-// Tile represents an actual physical tile on the board
-type Tile int
-
-// Letter represents an abstract letter (but more efficient to use than a rune)
-type Letter int
 
 // Direction is either Horizontal or Verical
 type Direction bool
@@ -71,45 +39,6 @@ func (b Bonus) ToString() string {
 	return ""
 }
 
-func (t Tile) String() string {
-	if t.IsBlank() {
-		return "_"
-	}
-	return string(Tile2Rune(t))
-}
-
-// IsNoTile returns true if a tile is literally non existent
-func (t Tile) IsNoTile() bool {
-	return t == -1
-}
-
-const blankTileBit = 1 << 10
-const letterMask = 1<<7 - 1
-
-// Direction constants
-const (
-	Vertical   Direction = true
-	Horizontal           = !Vertical
-)
-
-// Shorthands for bonuses
-const (
-	xx Bonus = iota
-	DW
-	TW
-	DL
-	TL
-)
-
-// Longer names for bonus spaces
-const (
-	None         = xx
-	DoubleWord   = DW
-	TripleWord   = TW
-	DoubleLetter = DL
-	TripleLetter = TL
-)
-
 // PlacedWord represents a set of tiles placed on a board
 type PlacedWord struct {
 	Word      []Tile
@@ -135,42 +64,6 @@ func (d Direction) Offsets() (dRow, dCol int) {
 		return 0, 1
 	}
 	return 1, 0
-}
-
-// PointValue returns the Score associated with a Tile
-func (t Tile) PointValue() Score {
-	if t.IsBlank() {
-		return 0
-	}
-	return letterValues[t]
-}
-
-// IsBlank returns true for blank tiles
-func (t Tile) IsBlank() bool {
-	return t&blankTileBit != 0
-}
-
-// ToLetter converts a tile to the letter it represents
-func (t Tile) ToLetter() Letter {
-	return Letter(t & letterMask)
-}
-
-var normalBonus = [...][15]Bonus{
-	{TW, xx, xx, DL, xx, xx, xx, TW, xx, xx, xx, DL, xx, xx, TW},
-	{xx, DW, xx, xx, xx, TL, xx, xx, xx, TL, xx, xx, xx, DW, xx},
-	{xx, xx, DW, xx, xx, xx, DL, xx, DL, xx, xx, xx, DW, xx, xx},
-	{DL, xx, xx, DW, xx, xx, xx, DL, xx, xx, xx, DW, xx, xx, DL},
-	{xx, xx, xx, xx, DW, xx, xx, xx, xx, xx, DW, xx, xx, xx, xx},
-	{xx, TL, xx, xx, xx, TL, xx, xx, xx, TL, xx, xx, xx, TL, xx},
-	{xx, xx, DL, xx, xx, xx, DL, xx, DL, xx, xx, xx, DL, xx, xx},
-	{TW, xx, xx, DL, xx, xx, xx, DW, xx, xx, xx, DL, xx, xx, TW},
-	{xx, xx, DL, xx, xx, xx, DL, xx, DL, xx, xx, xx, DL, xx, xx},
-	{xx, TL, xx, xx, xx, TL, xx, xx, xx, TL, xx, xx, xx, TL, xx},
-	{xx, xx, xx, xx, DW, xx, xx, xx, xx, xx, DW, xx, xx, xx, xx},
-	{DL, xx, xx, DW, xx, xx, xx, DL, xx, xx, xx, DW, xx, xx, DL},
-	{xx, xx, DW, xx, xx, xx, DL, xx, DL, xx, xx, xx, DW, xx, xx},
-	{xx, DW, xx, xx, xx, TL, xx, xx, xx, TL, xx, xx, xx, DW, xx},
-	{TW, xx, xx, DL, xx, xx, xx, TW, xx, xx, xx, DL, xx, xx, TW},
 }
 
 // Cell represents a spot on the board
@@ -409,7 +302,7 @@ func (b *Board) Print() {
 			letter := ' '
 			cellColor := color.New(color.FgBlack)
 			if b.HasTile(i, j) {
-				letter = Tile2Rune(cell.Tile)
+				letter = cell.Tile.ToRune()
 				cellColor = cellColor.Add(color.BgMagenta)
 			} else {
 				switch cell.Bonus {
@@ -451,47 +344,6 @@ func reverse(tiles []Tile) {
 	}
 }
 
-// Rune2Letter returns the Letter corresponding to a rune in ['a'..'z']
-func Rune2Letter(r rune) Letter {
-	return Letter(r - 'a')
-}
-
-// Rune2Tile constructs a tile
-func Rune2Tile(r rune, blank bool) Tile {
-	return letter2Tile(Rune2Letter(r), blank)
-}
-
-func letter2Tile(l Letter, blank bool) Tile {
-	if blank {
-		return Tile(l | blankTileBit)
-	}
-	return Tile(l)
-}
-
-func letter2Rune(t Letter) rune {
-	return rune(t + 'a')
-}
-
-func Tile2Rune(t Tile) rune {
-	return letter2Rune(t.ToLetter())
-}
-
-func tiles2String(tiles []Tile) string {
-	word := ""
-	for _, l := range tiles {
-		word += string(Tile2Rune(l))
-	}
-	return word
-}
-
-func tiles2Word(tiles []Tile) Word {
-	word := make(Word, len(tiles))
-	for i, l := range tiles {
-		word[i] = l.ToLetter()
-	}
-	return word
-}
-
 // MakeWord converts a string to a Word
 func MakeWord(word string) Word {
 	output := make(Word, len(word))
@@ -505,7 +357,7 @@ func MakeWord(word string) Word {
 func MakeTiles(word Word, mask string) []Tile {
 	output := make([]Tile, len(word))
 	for i, letter := range word {
-		output[i] = letter2Tile(letter, mask[i] == ' ')
+		output[i] = letter.ToTile(mask[i] == ' ')
 	}
 	return output
 }

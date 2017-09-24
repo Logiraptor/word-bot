@@ -1,53 +1,83 @@
 package core
 
 import (
+	"math/bits"
 	"math/rand"
 	"strings"
 )
 
 // A-9, B-2, C-2, D-4, E-12, F-2, G-3, H-2, I-9, J-1, K-1, L-4, M-2, N-6, O-8, P-2, Q-1, R-6, S-4, T-6, U-4, V-2, W-2, X-1, Y-2, Z-1 and Blanks-2.
 
-// Bag is a set of tiles used during play
-type Bag []Tile
+const allLetters = "aaaaaaaaabbccddddeeeeeeeeeeeeffggghhiiiiiiiiijkllllmmnnnnnnooooooooppqrrrrrrssssttttttuuuuvvwwxyyz"
 
-// NewBag creates a new, full bag
-func NewBag() *Bag {
-	const allLetters = "aaaaaaaaabbccddddeeeeeeeeeeeeffggghhiiiiiiiiijkllllmmnnnnnnooooooooppqrrrrrrssssttttttuuuuvvwwxyyz"
-	b := Bag(MakeTiles(MakeWord("aaaaaaaaabbccddddeeeeeeeeeeeeffggghhiiiiiiiiijkllllmmnnnnnnooooooooppqrrrrrrssssttttttuuuuvvwwxyyzaa"), strings.Repeat("x", len(allLetters))+"  "))
-	return &b
+var allTiles = MakeTiles(MakeWord(allLetters+"aa"), strings.Repeat("x", len(allLetters))+"  ")
+
+type ConsumableBag struct {
+	tiles    []Tile
+	consumed [2]uint64
+}
+
+func NewConsumableBag() ConsumableBag {
+	allTilesCopy := make([]Tile, len(allTiles))
+	copy(allTilesCopy, allTiles)
+	return ConsumableBag{
+		tiles: allTilesCopy,
+	}
 }
 
 // Shuffle randomizes the order of tiles inside the bag
-func (b Bag) Shuffle() {
-	for i := len(b) - 1; i > 0; i-- {
+func (c ConsumableBag) Shuffle() ConsumableBag {
+	result := c
+	result.tiles = make([]Tile, len(allTiles))
+	copy(result.tiles, allTiles)
+	for i := len(result.tiles) - 1; i > 0; i-- {
 		j := rand.Intn(i)
-		b[i], b[j] = b[j], b[i]
+		result.tiles[i], result.tiles[j] = result.tiles[j], result.tiles[i]
+
+		subFieldI := i / 64
+		remI := i % 64
+		bitI := result.consumed[subFieldI] & (1 << uint(remI))
+
+		subFieldJ := j / 64
+		remJ := j % 64
+		bitJ := result.consumed[subFieldJ] & (1 << uint(remJ))
+
+		result.consumed[subFieldI] |= (bitJ << uint(remI))
+		result.consumed[subFieldJ] |= (bitI << uint(remJ))
 	}
+
+	return result
 }
 
-// Draw returns the first n tiles from the bag and removes them from the bag.
-func (b *Bag) Draw(n int) []Tile {
-	if n > len(*b) {
-		n = len(*b)
-	}
-	out := (*b)[:n:n]
-	*b = (*b)[n:]
-	return out
+// Consume uses up a tile in the rack
+func (c ConsumableBag) Consume(i int) ConsumableBag {
+	result := c
+	subField := i / 64
+	rem := i % 64
+	result.consumed[subField] |= (1 << uint(rem))
+	return result
 }
 
-// Rack is a naive Rack implementation
-type Rack []Tile
+// CanConsume returns true if the ith tile is available to use
+func (c ConsumableBag) CanConsume(i int) bool {
+	subField := i / 64
+	rem := i % 64
+	return c.consumed[subField]&(1<<uint(rem)) == 0
+}
 
-// Remove removes the given tiles from the rack
-func (r *Rack) Remove(tiles []Tile) {
-outer:
-	for _, tile := range tiles {
-		for i := range *r {
-			if (*r)[i] == tile {
-				(*r)[i] = (*r)[len(*r)-1]
-				*r = (*r)[:len(*r)-1]
-				continue outer
-			}
+func (c ConsumableBag) FillRack(tiles []Tile) ConsumableBag {
+	i := 0
+	for x := 0; x < len(c.tiles) && i < len(tiles); x++ {
+		if c.CanConsume(x) {
+			tiles[i] = c.tiles[x]
+			c = c.Consume(x)
+			i++
 		}
 	}
+	return c
+}
+
+func (c ConsumableBag) Count() int {
+	consumed := bits.OnesCount64(c.consumed[0]) + bits.OnesCount64(c.consumed[1])
+	return len(allTiles) - consumed
 }

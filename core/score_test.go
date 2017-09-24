@@ -90,8 +90,8 @@ func TestBlankTiles(t *testing.T) {
 }
 
 func TestConversions(t *testing.T) {
-	tile := Rune2Tile('o', true)
-	r := letter2Rune(tile.ToLetter())
+	tile := Rune2Letter('o').ToTile(true)
+	r := tile.ToRune()
 	assert.Equal(t, r, 'o')
 }
 

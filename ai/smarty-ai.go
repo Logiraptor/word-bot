@@ -9,10 +9,10 @@ import (
 type SmartyAI struct {
 	board       *core.Board
 	wordList    core.WordList
-	searchSpace WordList
+	searchSpace WordTree
 }
 
-func NewSmartyAI(board *core.Board, wordList core.WordList, searchSpace WordList) *SmartyAI {
+func NewSmartyAI(board *core.Board, wordList core.WordList, searchSpace WordTree) *SmartyAI {
 	return &SmartyAI{
 		board:       board,
 		wordList:    wordList,
@@ -46,7 +46,7 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 						copy(newWord, word)
 
 						current := ScoredMove{
-							PlacedWord: core.PlacedWord{Word: newWord,Row: i,Col: j,Direction: core.Horizontal},
+							PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: core.Horizontal},
 							Score:      score,
 						}
 
@@ -67,7 +67,7 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 
 					numMoves++
 					current := ScoredMove{
-						PlacedWord: core.PlacedWord{newWord, i, j, core.Vertical},
+						PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: core.Vertical},
 						Score:      b.board.Score(newWord, i, j, core.Vertical),
 					}
 
@@ -90,12 +90,12 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 	return []ScoredMove{bestMove}
 }
 
-type WordList interface {
+type WordTree interface {
 	IsTerminal() bool
-	CanBranch(t core.Tile) (WordList, bool)
+	CanBranch(t core.Tile) (WordTree, bool)
 }
 
-func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordList, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
 	dRow, dCol := dir.Offsets()
 	if wordDB.IsTerminal() {
 		callback(prev)
@@ -113,7 +113,7 @@ func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack
 		for i, letter := range rack.Rack {
 			if letter.IsBlank() {
 				for r := 'a'; r <= 'z'; r++ {
-					letter := core.Rune2Tile(r, true)
+					letter := core.Rune2Letter(r).ToTile(true)
 					if next, ok := wordDB.CanBranch(letter); ok && rack.CanConsume(i) {
 						s.Search(i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, letter), callback)
 					}
