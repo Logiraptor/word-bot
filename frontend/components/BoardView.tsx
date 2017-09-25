@@ -1,7 +1,7 @@
 import * as React from "react";
-import { Tile, TileView } from "./rack";
+import { Tile, Board } from "../models/core";
+import { TileView } from "./RackInput";
 
-export type Board = Tile[][];
 
 export class BoardView extends React.Component<{ tiles: Board }> {
     renderRow = (row: Tile[], i: number) => {

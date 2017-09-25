@@ -1,11 +1,5 @@
 import * as React from "react";
-
-export interface Tile {
-    Letter: string;
-    Blank: boolean;
-    Value: number;
-    Bonus: string;
-}
+import { Tile } from "../models/core";
 
 export interface Props {
     mini?: boolean;
@@ -13,6 +7,11 @@ export interface Props {
     onChange(tiles: Tile[]);
     onMove(dRow: number, dCol: number);
     onFlip();
+    onDelete();
+    onChangePlayer(player: number);
+    onSubmit();
+    score?: number;
+    player: number;
 }
 
 export class RackInput extends React.Component<Props> {
@@ -41,18 +40,22 @@ export class RackInput extends React.Component<Props> {
                 className={"rack" + (this.props.mini ? " mini" : "")}
                 onKeyDown={(event) => {
                     let newTile: Tile;
-                    if (
-                        event.keyCode <= 90 &&
-                        event.keyCode >= 65 &&
-                        !(event.altKey || event.shiftKey || event.ctrlKey || event.metaKey)
-                    ) {
+                    if (event.keyCode <= 90 && event.keyCode >= 65) {
+                        let letter = event.key;
+                        if (event.shiftKey) {
+                            letter = event.key.toLowerCase();
+                        }
                         newTile = {
                             Blank: false,
-                            Letter: event.key,
+                            Letter: letter,
                             Value: 0,
                             Bonus: "",
                         };
                         this.props.onChange([ ...this.props.Tiles, newTile ]);
+                        return;
+                    }
+                    if (event.keyCode <= 57 && event.keyCode >= 48) {
+                        this.props.onChangePlayer(event.keyCode - 48);
                         return;
                     }
                     switch (event.keyCode) {
@@ -67,6 +70,9 @@ export class RackInput extends React.Component<Props> {
                             break;
                         case 40:
                             this.props.onMove(1, 0);
+                            break;
+                        case 46:
+                            this.props.onDelete();
                             break;
                         case 8:
                             this.props.onChange(this.props.Tiles.slice(0, -1));
@@ -83,11 +89,15 @@ export class RackInput extends React.Component<Props> {
                         case 16:
                             this.props.onFlip();
                             break;
+                        case 13:
+                            this.props.onSubmit();
+                            break;
                         default:
                             console.log(event.keyCode);
                     }
                 }}
             >
+                <span className={"move-score" + ` player-${this.props.player}`}>{this.props.score}</span>
                 {this.props.Tiles.map(this.renderTile)}
             </div>
         );

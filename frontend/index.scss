@@ -1,8 +1,44 @@
+@mixin bg($color) {
+    background-color: $color;
+
+    &:hover {
+        background-color: darken($color, 20%);
+    }
+
+    &:focus {
+        background-color: lighten($color, 20%);
+    }
+}
+
+@mixin material-bg($color) {
+    background-color: nth($color, 1);
+
+    &:hover {
+        background-color: nth($color, 3);
+    }
+
+    &:focus {
+        background-color: nth($color, 2);
+    }
+
+    color: nth($color, 4);
+}
+
+$primary: (#039be5, #63ccff, #006db3, black);
+
+$secondary: (#ad1457, #e35183, #78002e, white);
+
+$widget-fill: #e1e2e1;
+
+body {
+    margin: 0;
+}
+
 .space {
     content: " ";
     background-color: #fdf4e2;
     position: relative;
-    margin: 0.25em;
+    margin: 0.15em;
     width: 2em;
     padding: 0.25em 0;
     min-height: 2em;
@@ -14,7 +50,9 @@
 }
 
 .board {
-    font-size: 1.5em;
+    font-size: calc((100vh - 6em) / 35);
+    margin: auto;
+    width: 2.35em * 15;
 }
 
 .space.DW {
@@ -38,15 +76,15 @@
     font-weight: bold;
 }
 
-.score {
-    position: absolute;
-    top: 50%;
-    left: 70%;
-    font-size: 0.50em;
-}
-
 .tile {
-    background-color: #ffdc99;
+    @include bg(#ffdc99);
+    color: black;
+    .score {
+        position: absolute;
+        top: 50%;
+        left: 70%;
+        font-size: 0.50em;
+    }
 }
 
 .tile.blank {
@@ -54,18 +92,33 @@
 }
 
 .rack {
-    width: 100%;
-    min-height: 2em;
+    min-width: 2em;
+    min-height: 2.4em;
     font-size: 1.5em;
-    background-color: grey;
+    @include bg(grey);
+    display: inline-block;
 }
 
 .rack.mini {
     font-size: 0.75em;
+    width: 100%;
+
+    .move-score {
+        padding: 0.5em;
+        text-align: right;
+        display: inline-block;
+        width: 2em;
+        color: white;
+        font-size: 1.5em;
+    }
 }
 
-.rack:focus {
-    background-color: lightgray;
+.player-1 {
+    @include material-bg($primary);
+}
+
+.player-2 {
+    @include material-bg($secondary);
 }
 
 .panel {
@@ -77,4 +130,47 @@
 .scroll {
     height: 400px;
     overflow: auto;
+}
+
+.player-rack {
+    width: 100%;
+    position: absolute;
+    bottom: 0px;
+    // height: 2.4em;
+    background-color: nth($primary, 1);
+
+    .rack {
+        @include material-bg($secondary);
+        margin: 0 auto;
+        display: block;
+    }
+}
+
+.btn {
+    margin: 0 auto;
+    display: block;
+    max-width: 100%;
+    padding: 0.5em;
+}
+
+.right-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 25em;
+    height: 100%;
+    background-color: $widget-fill;
+}
+
+.score-board {
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+    td {
+        font-weight: bold;
+        padding: 0.5em;
+        margin: 0;
+        text-align: right;
+    }
 }
