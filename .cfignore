@@ -1,3 +1,2 @@
-frontend/
-!frontend/public
+frontend/node_modules
 gin-bin
