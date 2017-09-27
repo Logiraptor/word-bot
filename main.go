@@ -11,7 +11,7 @@ import (
 var wordDB *wordlist.Trie
 
 func init() {
-	words, err := definitions.LoadWords()
+	words, err := definitions.LoadWords("./words.txt")
 	if err != nil {
 		panic(err)
 	}

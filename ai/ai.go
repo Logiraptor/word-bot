@@ -3,7 +3,6 @@ package ai
 import (
 	"fmt"
 	"sync"
-	"time"
 	"word-bot/core"
 )
 
@@ -37,8 +36,8 @@ func (s ScoredMove) String() string {
 func (b *BruteForceAI) FindMoves(rack []core.Tile) []ScoredMove {
 	words := permute(rack)
 
-	fmt.Println("Checking", len(words), "words")
-	start := time.Now()
+	// fmt.Println("Checking", len(words), "words")
+	// start := time.Now()
 	fmt.Println()
 
 	validChan := make(chan core.PlacedWord, 100)
@@ -97,13 +96,13 @@ func (b *BruteForceAI) FindMoves(rack []core.Tile) []ScoredMove {
 		if current.Score > bestMove.Score {
 			bestMove = current
 		}
-		fmt.Print("\rFound ", numMoves, " valid moves. High score: ", bestMove)
+		// fmt.Print("\rFound ", numMoves, " valid moves. High score: ", bestMove)
 	}
 
-	dur := time.Since(start)
-	fmt.Println()
+	// dur := time.Since(start)
+	// fmt.Println()
 
-	fmt.Println("Finished in", dur)
+	// fmt.Println("Finished in", dur)
 
 	return []ScoredMove{bestMove}
 }

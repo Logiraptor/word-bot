@@ -1,8 +1,7 @@
 package ai
 
 import (
-	"fmt"
-	"time"
+	"sync"
 	"word-bot/core"
 )
 
@@ -21,69 +20,80 @@ func NewSmartyAI(board *core.Board, wordList core.WordList, searchSpace WordTree
 }
 
 func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
-
-	start := time.Now()
-	fmt.Println()
-	numMoves := 0
+	var moves = make(chan ScoredMove)
 	var bestMove ScoredMove
+	var wg sync.WaitGroup
 
 	rack := core.NewConsumableRack(tiles)
 
 	for i := 0; i < 15; i++ {
-		for j := 0; j < 15; j++ {
-			b.Search(i, j, core.Horizontal, rack, b.searchSpace, nil, func(word []core.Tile) {
-				if len(word) == 0 {
-					return
-				}
+		wg.Add(1)
+		go func(i int) {
+			var localBestMove ScoredMove
+			for j := 0; j < 15; j++ {
 
-				if b.board.ValidateMove(word, i, j, core.Horizontal, b.wordList) {
+				b.Search(i, j, core.Horizontal, rack, b.searchSpace, nil, func(word []core.Tile) {
+					if len(word) == 0 {
+						return
+					}
 
-					numMoves++
-					score := b.board.Score(word, i, j, core.Horizontal)
+					if b.board.ValidateMove(word, i, j, core.Horizontal, b.wordList) {
 
-					if score > bestMove.Score {
+						score := b.board.Score(word, i, j, core.Horizontal)
+
+						if score > localBestMove.Score {
+							newWord := make([]core.Tile, len(word))
+							copy(newWord, word)
+
+							current := ScoredMove{
+								PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: core.Horizontal},
+								Score:      score,
+							}
+
+							localBestMove = current
+						}
+					}
+				})
+
+				b.Search(i, j, core.Vertical, rack, b.searchSpace, nil, func(word []core.Tile) {
+					if len(word) == 0 {
+						return
+					}
+
+					if b.board.ValidateMove(word, i, j, core.Vertical, b.wordList) {
 						newWord := make([]core.Tile, len(word))
 						copy(newWord, word)
 
 						current := ScoredMove{
-							PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: core.Horizontal},
-							Score:      score,
+							PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: core.Vertical},
+							Score:      b.board.Score(newWord, i, j, core.Vertical),
 						}
 
-						bestMove = current
+						if current.Score > localBestMove.Score {
+							localBestMove = current
+						}
 					}
-					fmt.Print("\rFound ", numMoves, " valid moves. High score: ", bestMove)
-				}
-			})
+				})
+			}
 
-			b.Search(i, j, core.Vertical, rack, b.searchSpace, nil, func(word []core.Tile) {
-				if len(word) == 0 {
-					return
-				}
+			if localBestMove.Word != nil {
+				moves <- localBestMove
+			}
+			wg.Done()
+		}(i)
+	}
 
-				if b.board.ValidateMove(word, i, j, core.Vertical, b.wordList) {
-					newWord := make([]core.Tile, len(word))
-					copy(newWord, word)
+	go func() {
+		wg.Wait()
+		close(moves)
+	}()
 
-					numMoves++
-					current := ScoredMove{
-						PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: core.Vertical},
-						Score:      b.board.Score(newWord, i, j, core.Vertical),
-					}
-
-					if current.Score > bestMove.Score {
-						bestMove = current
-					}
-					fmt.Print("\rFound ", numMoves, " valid moves. High score: ", bestMove)
-				}
-			})
+	for current := range moves {
+		if current.Score > bestMove.Score {
+			bestMove = current
 		}
 	}
 
-	dur := time.Since(start)
-	fmt.Println()
-
-	fmt.Println("Finished in", dur)
 	if bestMove.Word == nil {
 		return nil
 	}

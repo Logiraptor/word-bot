@@ -14,8 +14,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func LoadWords() ([]string, error) {
-	f, err := os.Open("./words.txt")
+func LoadWords(filename string) ([]string, error) {
+	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func defineWord(word string) (string, error) {
 	return strings.Join(strings.Fields(core[1]), " "), nil
 }
 
-func checkWords() {
-	words, err := LoadWords()
+func checkWords(filename string) {
+	words, err := LoadWords(filename)
 	if err != nil {
 		panic(err)
 	}
