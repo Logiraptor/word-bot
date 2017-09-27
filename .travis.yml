@@ -1,6 +1,9 @@
 language: go
 go:
 - '1.9'
+before_deploy:
+  - docker run --rm  -v $(pwd)/frontend:/home/ws -w /home/ws node yarn
+  - docker run --rm  -v $(pwd)/frontend:/home/ws -w /home/ws node yarn build
 deploy:
   provider: cloudfoundry
   api: api.run.pez.pivotal.io
