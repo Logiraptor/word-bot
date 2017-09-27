@@ -1,0 +1,7 @@
+---
+applications:
+  - name: word-bot
+    buildpack: go_buildpack
+    env:
+      GOPACKAGENAME: main
+      GOVERSION: go1.9
