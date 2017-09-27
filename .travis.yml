@@ -1,0 +1,13 @@
+language: go
+go:
+- '1.9'
+deploy:
+  provider: cloudfoundry
+  api: api.run.pez.pivotal.io
+  username: patrickoyarzun@gmail.com
+  password:
+    secure: nKzl5/rpM2LPFQd10CMYtlfaPk8kZ6hCBg3By7bz7npZ1w+o9OX1f+zmr1LutaJ8piM/ZvXXEef8UsTezbhoLoKTI2amCCEFSMFwUjzCbk5neY74iam7g5XohY7jUur9yTsUo7kjusk0rXjDO7Szm5+1up/ybq7xp0ZJj7rPPH3cMeZbZaF0mro3vEXGe4Lw/areucUMS2KqXQMtE2oeV3raMkdUyV8iiy8IG88OG74epTZ/quOYobpAMzAkTg8yL+Jdh3VFYs2SJ3XN7Cp2RVCTA48A3QtR3RJtcFKzclmsgtKrpEsX30keyBAhPtBujxVsfPJLcmEcbORrAdWGDS4MRPb5XB+sgmLGn3epDr8Ag6GR23CiAgDBcdJ3aa5jxWm871Z3pb4nLgzU4iX7F4iUgalZilv90Gz5jD5iX0ADQju83dXZ2A0AIkNMVd8VI+0GqEyO5i4H6c9JRVthaXS7kwb705+Op473+75Oafc220KbTLhgfyrYgDdzilGac0nwLpxKcGJwR86x8SYrAF+RUPA23+d3/HbizQrjfzmghpMcLo2u3YZrDmKftjPi9rudqXslZDBvAeKOEAjgezMVXFpR6SWaFf7Mma7O4EiSExQJ0pL0GCD3v2GFvzV4wWUeKOVpPpkxfGtnc0zJWdRgfESmuFnaMlQq/GUp6+Y=
+  organization: pivot-poyarzun
+  space: development
+  on:
+    repo: Logiraptor/word-bot
