@@ -3,9 +3,10 @@ package main
 import (
 	"net/http"
 	"os"
-	"word-bot/definitions"
-	"word-bot/web"
-	"word-bot/wordlist"
+
+	"github.com/Logiraptor/word-bot/definitions"
+	"github.com/Logiraptor/word-bot/web"
+	"github.com/Logiraptor/word-bot/wordlist"
 )
 
 var wordDB *wordlist.Trie

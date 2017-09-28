@@ -2,10 +2,10 @@ package ai_test
 
 import (
 	"testing"
-	"word-bot/ai"
-	"word-bot/core"
-	"word-bot/definitions"
-	"word-bot/wordlist"
+	"github.com/Logiraptor/word-bot/ai"
+	"github.com/Logiraptor/word-bot/core"
+	"github.com/Logiraptor/word-bot/definitions"
+	"github.com/Logiraptor/word-bot/wordlist"
 )
 
 var wordDB *wordlist.Trie

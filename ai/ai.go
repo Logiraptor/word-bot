@@ -3,7 +3,7 @@ package ai
 import (
 	"fmt"
 	"sync"
-	"word-bot/core"
+	"github.com/Logiraptor/word-bot/core"
 )
 
 type BruteForceAI struct {

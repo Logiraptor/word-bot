@@ -1,7 +1,7 @@
 package web
 
 import (
-	"word-bot/ai"
+	"github.com/Logiraptor/word-bot/ai"
 
 	"github.com/gorilla/websocket"
 )

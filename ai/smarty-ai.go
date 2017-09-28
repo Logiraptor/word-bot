@@ -3,7 +3,7 @@ package ai
 import (
 	"sync"
 	"sync/atomic"
-	"word-bot/core"
+	"github.com/Logiraptor/word-bot/core"
 )
 
 type SmartyAI struct {

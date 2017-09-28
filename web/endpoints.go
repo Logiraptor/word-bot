@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"word-bot/ai"
-	"word-bot/core"
+	"github.com/Logiraptor/word-bot/ai"
+	"github.com/Logiraptor/word-bot/core"
 )
 
 type Server struct {
