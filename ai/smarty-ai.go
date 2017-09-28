@@ -3,20 +3,55 @@ package ai
 import (
 	"sync"
 	"sync/atomic"
+
 	"github.com/Logiraptor/word-bot/core"
 )
 
 type SmartyAI struct {
 	board       *core.Board
 	wordList    core.WordList
+	jobs        chan<- Job
 	searchSpace WordTree
 }
 
 func NewSmartyAI(board *core.Board, wordList core.WordList, searchSpace WordTree) *SmartyAI {
-	return &SmartyAI{
+
+	jobs := make(chan Job)
+
+	s := &SmartyAI{
 		board:       board,
 		wordList:    wordList,
 		searchSpace: searchSpace,
+		jobs:        jobs,
+	}
+
+	for i := 0; i < 10; i++ {
+		go searchWorker(s, jobs)
+	}
+
+	return s
+}
+
+type Job struct {
+	i, j       int
+	dir        core.Direction
+	rack       core.ConsumableRack
+	wordDB     WordTree
+	resultChan chan<- Result
+}
+
+type Result struct {
+	word []core.Tile
+}
+
+func searchWorker(s *SmartyAI, jobs <-chan Job) {
+	for job := range jobs {
+		s.Search(job.i, job.j, job.dir, job.rack, job.wordDB, nil, func(word []core.Tile) {
+			job.resultChan <- Result{
+				word: word,
+			}
+		})
+		close(job.resultChan)
 	}
 }
 

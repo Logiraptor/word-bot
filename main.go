@@ -12,15 +12,12 @@ import (
 var wordDB *wordlist.Trie
 
 func init() {
-	words, err := definitions.LoadWords("./words.txt")
+	builder := wordlist.NewTrieBuilder(151434)
+	err := definitions.LoadWords("./words.txt", builder)
 	if err != nil {
 		panic(err)
 	}
 
-	builder := wordlist.NewTrieBuilder()
-	for _, word := range words {
-		builder.AddWord(word)
-	}
 	wordDB = builder.Build()
 }
 

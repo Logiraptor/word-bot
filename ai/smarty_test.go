@@ -2,6 +2,7 @@ package ai_test
 
 import (
 	"testing"
+
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
 	"github.com/Logiraptor/word-bot/definitions"
@@ -11,21 +12,11 @@ import (
 var wordDB *wordlist.Trie
 
 func init() {
-	words, err := definitions.LoadWords("../words.txt")
+	wordDB = wordlist.NewTrie()
+	err := definitions.LoadWords("../shortwords.txt", wordDB)
 	if err != nil {
 		panic(err)
 	}
-
-	// wordDB = wordlist.NewTrie()
-	// for _, word := range words {
-	// 	wordDB.AddWord(word)
-	// }
-
-	builder := wordlist.NewTrieBuilder()
-	for _, word := range words {
-		builder.AddWord(word)
-	}
-	wordDB = builder.Build()
 }
 
 func BenchmarkSmarty(b *testing.B) {
