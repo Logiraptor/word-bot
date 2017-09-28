@@ -49,3 +49,47 @@ func (t *Trie) AddWord(word string) {
 
 	current.terminal = true
 }
+
+type TrieInConstruction struct {
+	nodes    [26]int
+	terminal bool
+}
+
+type TrieBuilder struct {
+	nodes []TrieInConstruction
+}
+
+func NewTrieBuilder() *TrieBuilder {
+	return &TrieBuilder{
+		nodes: []TrieInConstruction{
+			{},
+		},
+	}
+}
+
+func (t *TrieBuilder) AddWord(word string) {
+	current := &t.nodes[0]
+	for _, letter := range word {
+		i := core.Rune2Letter(letter)
+		if current.nodes[i] == 0 {
+			current.nodes[i] = len(t.nodes)
+			t.nodes = append(t.nodes, TrieInConstruction{})
+		}
+		current = &t.nodes[current.nodes[i]]
+	}
+
+	current.terminal = true
+}
+
+func (t *TrieBuilder) Build() *Trie {
+	finalTries := make([]Trie, len(t.nodes))
+	for i, node := range t.nodes {
+		for j, link := range node.nodes {
+			if link != 0 {
+				finalTries[i].nodes[j] = &finalTries[link]
+			}
+		}
+		finalTries[i].terminal = node.terminal
+	}
+	return &finalTries[0]
+}

@@ -2,6 +2,10 @@ language: go
 go:
 - '1.9'
 before_deploy:
+  - go get github.com/kardianos/govendor
+  - govendor init
+  - govendor add +external
+  - govendor add +missing
   - docker run --rm  -v $(pwd)/frontend:/home/ws -w /home/ws node yarn
   - docker run --rm  -v $(pwd)/frontend:/home/ws -w /home/ws node yarn build
 deploy:

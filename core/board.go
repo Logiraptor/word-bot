@@ -4,9 +4,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 
 	"github.com/fatih/color"
 )
+
+var allocCount = 0
+var freeCount = 0
+
+var tileSlices = sync.Pool{
+	New: func() interface{} {
+		return []Tile{}
+	},
+}
+
+func newTileSlice() []Tile {
+	slice := tileSlices.Get().([]Tile)
+	allocCount++
+	if (allocCount-freeCount)%1e6 == 0 {
+		fmt.Println(allocCount - freeCount)
+	}
+	return slice[:0]
+}
+
+func recycleTileSlice(tiles []Tile) {
+	freeCount++
+
+	tileSlices.Put(tiles)
+}
 
 // WordList is used to validate words
 type WordList interface {
@@ -212,22 +237,26 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []PlacedWord {
 	dRow, dCol := direction.Offsets()
 	words := []PlacedWord{}
-	wordLetters := make([]Tile, 0, len(word))
 	progress := 0
 	wordPos := 0
+
+	var letters []Tile
+	letters = b.scan(letters, row-dRow, col-dCol, -dRow, -dCol)
+	reverse(letters)
+	leftLen := len(letters)
 
 	tileRow := row + dRow*progress
 	tileCol := col + dCol*progress
 	for !b.OutOfBounds(tileRow, tileCol) && wordPos < len(word) {
 
 		if b.HasTile(tileRow, tileCol) {
-			wordLetters = append(wordLetters, b.Cells[tileRow][tileCol].Tile)
+			letters = append(letters, b.Cells[tileRow][tileCol].Tile)
 		} else {
 			subWord, ok := b.GrowWord(word[wordPos], tileRow, tileCol, !direction)
 			if ok {
 				words = append(words, subWord)
 			}
-			wordLetters = append(wordLetters, word[wordPos])
+			letters = append(letters, word[wordPos])
 			wordPos++
 		}
 
@@ -237,17 +266,17 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 	}
 
 	// Grow placed word
-	lhs := b.scan(row-dRow, col-dCol, -dRow, -dCol)
-	reverse(lhs)
-	rhs := b.scan(
-		row+dRow*len(wordLetters),
-		col+dCol*len(wordLetters),
+
+	letters = b.scan(letters,
+		row+dRow*(len(letters)-leftLen),
+		col+dCol*(len(letters)-leftLen),
 		dRow, dCol)
-	wordLetters = append(append(lhs, wordLetters...), rhs...)
 
 	words = append(words, PlacedWord{
-		Col: col - dCol*len(lhs), Row: row - dRow*len(lhs),
-		Direction: direction, Word: wordLetters,
+		Col:       col - dCol*leftLen,
+		Row:       row - dRow*leftLen,
+		Direction: direction,
+		Word:      letters,
 	})
 
 	return words
@@ -257,17 +286,19 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool) {
 	dRow, dCol := dir.Offsets()
 
-	lhs := b.scan(row-dRow, col-dCol, -dRow, -dCol)
-	reverse(lhs)
-	rhs := b.scan(row+dRow, col+dCol, dRow, dCol)
-	word := append(append(lhs, l), rhs...)
+	var letters []Tile
+	letters = b.scan(letters, row-dRow, col-dCol, -dRow, -dCol)
+	lenLeft := len(letters)
+	reverse(letters)
+	letters = append(letters, l)
+	letters = b.scan(letters, row+dRow, col+dCol, dRow, dCol)
 
 	return PlacedWord{
-		Col:       col - len(lhs)*dCol,
-		Row:       row - len(lhs)*dRow,
+		Col:       col - lenLeft*dCol,
+		Row:       row - lenLeft*dRow,
 		Direction: dir,
-		Word:      word,
-	}, len(word) > 1
+		Word:      letters,
+	}, len(letters) > 1
 }
 
 // PlaceTiles places tiles. It does not validate the move.
@@ -325,8 +356,7 @@ func (b *Board) Print() {
 	}
 }
 
-func (b *Board) scan(row, col, dRow, dCol int) []Tile {
-	letters := []Tile{}
+func (b *Board) scan(letters []Tile, row, col, dRow, dCol int) []Tile {
 	for col >= 0 && col < 15 &&
 		row >= 0 && row < 15 &&
 		b.HasTile(row, col) {

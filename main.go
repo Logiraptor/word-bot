@@ -16,10 +16,11 @@ func init() {
 		panic(err)
 	}
 
-	wordDB = wordlist.NewTrie()
+	builder := wordlist.NewTrieBuilder()
 	for _, word := range words {
-		wordDB.AddWord(word)
+		builder.AddWord(word)
 	}
+	wordDB = builder.Build()
 }
 
 func main() {

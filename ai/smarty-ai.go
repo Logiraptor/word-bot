@@ -2,6 +2,7 @@ package ai
 
 import (
 	"sync"
+	"sync/atomic"
 	"word-bot/core"
 )
 
@@ -24,56 +25,44 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 	var bestMove ScoredMove
 	var wg sync.WaitGroup
 
+	var badMoves uint64
+
 	rack := core.NewConsumableRack(tiles)
+
+	dirs := []core.Direction{core.Horizontal, core.Vertical}
 
 	for i := 0; i < 15; i++ {
 		wg.Add(1)
 		go func(i int) {
 			var localBestMove ScoredMove
 			for j := 0; j < 15; j++ {
+				for _, dir := range dirs {
 
-				b.Search(i, j, core.Horizontal, rack, b.searchSpace, nil, func(word []core.Tile) {
-					if len(word) == 0 {
-						return
-					}
+					b.Search(i, j, dir, rack, b.searchSpace, nil, func(word []core.Tile) {
+						if len(word) == 0 {
+							return
+						}
 
-					if b.board.ValidateMove(word, i, j, core.Horizontal, b.wordList) {
+						if b.board.ValidateMove(word, i, j, dir, b.wordList) {
+							score := b.board.Score(word, i, j, dir)
 
-						score := b.board.Score(word, i, j, core.Horizontal)
+							if score > localBestMove.Score {
+								newWord := make([]core.Tile, len(word))
+								copy(newWord, word)
 
-						if score > localBestMove.Score {
-							newWord := make([]core.Tile, len(word))
-							copy(newWord, word)
+								current := ScoredMove{
+									PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: dir},
+									Score:      score,
+								}
 
-							current := ScoredMove{
-								PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: core.Horizontal},
-								Score:      score,
+								localBestMove = current
 							}
-
-							localBestMove = current
+						} else {
+							atomic.AddUint64(&badMoves, 1)
 						}
-					}
-				})
+					})
 
-				b.Search(i, j, core.Vertical, rack, b.searchSpace, nil, func(word []core.Tile) {
-					if len(word) == 0 {
-						return
-					}
-
-					if b.board.ValidateMove(word, i, j, core.Vertical, b.wordList) {
-						newWord := make([]core.Tile, len(word))
-						copy(newWord, word)
-
-						current := ScoredMove{
-							PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: core.Vertical},
-							Score:      b.board.Score(newWord, i, j, core.Vertical),
-						}
-
-						if current.Score > localBestMove.Score {
-							localBestMove = current
-						}
-					}
-				})
+				}
 			}
 
 			if localBestMove.Word != nil {
@@ -94,6 +83,8 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 		}
 	}
 
+	// fmt.Println(badMoves, "invalid moves played")
+
 	if bestMove.Word == nil {
 		return nil
 	}
@@ -104,6 +95,9 @@ type WordTree interface {
 	IsTerminal() bool
 	CanBranch(t core.Tile) (WordTree, bool)
 }
+
+var blankA = core.Rune2Letter('a').ToTile(true)
+var blankZ = core.Rune2Letter('z').ToTile(true)
 
 func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
 	dRow, dCol := dir.Offsets()
@@ -117,22 +111,60 @@ func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack
 	if s.board.HasTile(i, j) {
 		letter := s.board.Cells[i][j].Tile
 		if next, ok := wordDB.CanBranch(letter); ok {
-			s.Search(i+dRow, j+dCol, dir, rack, next, prev, callback)
+			s.stepForward(i+dRow, j+dCol, dir, rack, next, prev, callback)
 		}
 	} else {
 		for i, letter := range rack.Rack {
+			if !rack.CanConsume(i) {
+				continue
+			}
 			if letter.IsBlank() {
-				for r := 'a'; r <= 'z'; r++ {
-					letter := core.Rune2Letter(r).ToTile(true)
-					if next, ok := wordDB.CanBranch(letter); ok && rack.CanConsume(i) {
-						s.Search(i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, letter), callback)
+				for r := blankA; r <= blankZ; r++ {
+					if next, ok := wordDB.CanBranch(r); ok {
+						s.stepForward(i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, r), callback)
 					}
 				}
 			} else {
-				if next, ok := wordDB.CanBranch(letter); ok && rack.CanConsume(i) {
-					s.Search(i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, letter), callback)
+				if next, ok := wordDB.CanBranch(letter); ok {
+					s.stepForward(i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, letter), callback)
 				}
 			}
 		}
 	}
+}
+
+func (s *SmartyAI) stepForward(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
+	// back up perpendicular to advancing direction until I hit a blank
+	var (
+		ok                 bool
+		perpI, perpJ       = i, j
+		perpDRow, perpDCol = (!dir).Offsets()
+	)
+	for s.board.HasTile(perpI, perpJ) {
+		perpI -= perpDRow
+		perpJ -= perpDCol
+	}
+	// go back to the last tile I was on
+	perpI += perpDRow
+	perpJ += perpDRow
+
+	// validate continuous string of tiles is a word
+	wordRoot := s.searchSpace
+	for s.board.HasTile(perpI, perpJ) {
+		t := s.board.Cells[perpI][perpJ].Tile
+		if wordRoot, ok = wordRoot.CanBranch(t); !ok {
+			// This is not a word, bail out
+			return
+		}
+		perpI += perpDRow
+		perpJ += perpDRow
+	}
+
+	l := (perpI - i) + (perpJ - j)
+
+	// if so, recurse on search
+	if wordRoot.IsTerminal() || l == 0 {
+		s.Search(i, j, dir, rack, wordDB, prev, callback)
+	}
+	// if not, return
 }
