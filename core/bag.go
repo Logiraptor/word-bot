@@ -65,16 +65,16 @@ func (c ConsumableBag) CanConsume(i int) bool {
 	return c.consumed[subField]&(1<<uint(rem)) == 0
 }
 
-func (c ConsumableBag) FillRack(tiles []Tile) ConsumableBag {
+func (c ConsumableBag) FillRack(tiles []Tile, n int) (ConsumableBag, []Tile) {
 	i := 0
-	for x := 0; x < len(c.tiles) && i < len(tiles); x++ {
+	for x := 0; x < len(c.tiles) && i < n; x++ {
 		if c.CanConsume(x) {
-			tiles[i] = c.tiles[x]
+			tiles = append(tiles, c.tiles[x])
 			c = c.Consume(x)
 			i++
 		}
 	}
-	return c
+	return c, tiles
 }
 
 func (c ConsumableBag) Count() int {
