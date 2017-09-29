@@ -5,7 +5,7 @@ before_deploy:
   - go get github.com/kardianos/govendor
   - govendor init
   - govendor add +external
-  - govendor add +missing
+  - govendor add +local
   - docker run --rm  -v $(pwd)/frontend:/home/ws -w /home/ws node yarn
   - docker run --rm  -v $(pwd)/frontend:/home/ws -w /home/ws node yarn build
 deploy:
