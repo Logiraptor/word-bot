@@ -1,29 +1,71 @@
 package ai
 
 import (
+	"runtime"
 	"sync"
 	"sync/atomic"
+
 	"github.com/Logiraptor/word-bot/core"
 )
 
 type SmartyAI struct {
 	board       *core.Board
 	wordList    core.WordList
+	jobs        chan<- Job
 	searchSpace WordTree
 }
 
 func NewSmartyAI(board *core.Board, wordList core.WordList, searchSpace WordTree) *SmartyAI {
-	return &SmartyAI{
+
+	jobs := make(chan Job, 15*15*2)
+
+	s := &SmartyAI{
 		board:       board,
 		wordList:    wordList,
 		searchSpace: searchSpace,
+		jobs:        jobs,
+	}
+
+	for i := 0; i < runtime.NumCPU(); i++ {
+		go searchWorker(s, jobs)
+	}
+
+	return s
+}
+
+type Job struct {
+	i, j       int
+	dir        core.Direction
+	rack       core.ConsumableRack
+	wordDB     WordTree
+	resultChan chan<- Result
+	wg         *sync.WaitGroup
+}
+
+type Result struct {
+	word     []core.Tile
+	row, col int
+	dir      core.Direction
+}
+
+func searchWorker(s *SmartyAI, jobs <-chan Job) {
+	var tiles = make([]core.Tile, 0, 15)
+	for job := range jobs {
+		s.Search(job.i, job.j, job.dir, job.rack, job.wordDB, tiles, func(word []core.Tile) {
+			job.resultChan <- Result{
+				word: word,
+				row:  job.i,
+				col:  job.j,
+				dir:  job.dir,
+			}
+		})
+		job.wg.Done()
 	}
 }
 
 func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
-	var moves = make(chan ScoredMove)
 	var bestMove ScoredMove
-	var wg sync.WaitGroup
+	var wg = new(sync.WaitGroup)
 
 	var badMoves uint64
 
@@ -31,55 +73,56 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 
 	dirs := []core.Direction{core.Horizontal, core.Vertical}
 
-	for i := 0; i < 15; i++ {
-		wg.Add(1)
-		go func(i int) {
-			var localBestMove ScoredMove
-			for j := 0; j < 15; j++ {
-				for _, dir := range dirs {
-
-					b.Search(i, j, dir, rack, b.searchSpace, nil, func(word []core.Tile) {
-						if len(word) == 0 {
-							return
-						}
-
-						if b.board.ValidateMove(word, i, j, dir, b.wordList) {
-							score := b.board.Score(word, i, j, dir)
-
-							if score > localBestMove.Score {
-								newWord := make([]core.Tile, len(word))
-								copy(newWord, word)
-
-								current := ScoredMove{
-									PlacedWord: core.PlacedWord{Word: newWord, Row: i, Col: j, Direction: dir},
-									Score:      score,
-								}
-
-								localBestMove = current
-							}
-						} else {
-							atomic.AddUint64(&badMoves, 1)
-						}
-					})
-
-				}
-			}
-
-			if localBestMove.Word != nil {
-				moves <- localBestMove
-			}
-			wg.Done()
-		}(i)
-	}
+	results := make(chan Result, 10)
 
 	go func() {
+		for i := 0; i < 15; i++ {
+			for j := 0; j < 15; j++ {
+				for _, dir := range dirs {
+					wg.Add(1)
+					b.jobs <- Job{
+						i:          i,
+						j:          j,
+						dir:        dir,
+						rack:       rack,
+						resultChan: results,
+						wg:         wg,
+						wordDB:     b.searchSpace,
+					}
+				}
+			}
+		}
+
 		wg.Wait()
-		close(moves)
+		close(results)
 	}()
 
-	for current := range moves {
-		if current.Score > bestMove.Score {
-			bestMove = current
+	for result := range results {
+		if len(result.word) == 0 {
+			continue
+		}
+
+		if b.board.ValidateMove(result.word, result.row, result.col, result.dir, b.wordList) {
+			score := b.board.Score(result.word, result.row, result.col, result.dir)
+
+			if score > bestMove.Score {
+				newWord := make([]core.Tile, len(result.word))
+				copy(newWord, result.word)
+
+				current := ScoredMove{
+					PlacedWord: core.PlacedWord{
+						Word:      newWord,
+						Row:       result.row,
+						Col:       result.col,
+						Direction: result.dir,
+					},
+					Score: score,
+				}
+
+				bestMove = current
+			}
+		} else {
+			atomic.AddUint64(&badMoves, 1)
 		}
 	}
 

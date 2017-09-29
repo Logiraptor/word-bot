@@ -50,46 +50,52 @@ func (t *Trie) AddWord(word string) {
 	current.terminal = true
 }
 
-type TrieInConstruction struct {
-	nodes    [26]int
-	terminal bool
-}
-
 type TrieBuilder struct {
-	nodes []TrieInConstruction
+	nodes []Trie
+	ptr   int
 }
 
-func NewTrieBuilder() *TrieBuilder {
+func NewTrieBuilder(size int) *TrieBuilder {
+	nodes := make([]Trie, size)
+	nodes = append(nodes, Trie{})
 	return &TrieBuilder{
-		nodes: []TrieInConstruction{
-			{},
-		},
+		nodes: nodes,
+		ptr:   1,
 	}
+}
+
+func (t *TrieBuilder) allocateTrie() *Trie {
+	t.ptr++
+	if t.ptr >= len(t.nodes) {
+		t.nodes = append(t.nodes, Trie{})
+		t.nodes = t.nodes[:cap(t.nodes)]
+	}
+	return &t.nodes[t.ptr]
 }
 
 func (t *TrieBuilder) AddWord(word string) {
 	current := &t.nodes[0]
 	for _, letter := range word {
 		i := core.Rune2Letter(letter)
-		if current.nodes[i] == 0 {
-			current.nodes[i] = len(t.nodes)
-			t.nodes = append(t.nodes, TrieInConstruction{})
+		if current.nodes[i] == nil {
+			current.nodes[i] = t.allocateTrie()
 		}
-		current = &t.nodes[current.nodes[i]]
+		current = current.nodes[i]
 	}
 
 	current.terminal = true
 }
 
 func (t *TrieBuilder) Build() *Trie {
-	finalTries := make([]Trie, len(t.nodes))
-	for i, node := range t.nodes {
-		for j, link := range node.nodes {
-			if link != 0 {
-				finalTries[i].nodes[j] = &finalTries[link]
-			}
-		}
-		finalTries[i].terminal = node.terminal
-	}
-	return &finalTries[0]
+	return &t.nodes[0]
+	// finalTries := make([]Trie, len(t.nodes))
+	// for i, node := range t.nodes {
+	// 	for j, link := range node.nodes {
+	// 		if link != 0 {
+	// 			finalTries[i].nodes[j] = &finalTries[link]
+	// 		}
+	// 	}
+	// 	finalTries[i].terminal = node.terminal
+	// }
+	// return &finalTries[0]
 }
