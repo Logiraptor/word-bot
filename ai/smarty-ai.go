@@ -3,7 +3,6 @@ package ai
 import (
 	"runtime"
 	"sync"
-	"sync/atomic"
 
 	"github.com/Logiraptor/word-bot/core"
 )
@@ -52,22 +51,31 @@ func searchWorker(s *SmartyAI, jobs <-chan Job) {
 	var tiles = make([]core.Tile, 0, 15)
 	for job := range jobs {
 		s.Search(job.i, job.j, job.dir, job.rack, job.wordDB, tiles, func(word []core.Tile) {
-			job.resultChan <- Result{
+			if len(word) == 0 {
+				return
+			}
+
+			result := Result{
 				word: word,
 				row:  job.i,
 				col:  job.j,
 				dir:  job.dir,
+			}
+			if s.board.ValidateMove(result.word, result.row, result.col, result.dir, s.wordList) {
+				newWord := make([]core.Tile, len(result.word))
+				copy(newWord, result.word)
+				result.word = newWord
+
+				job.resultChan <- result
 			}
 		})
 		job.wg.Done()
 	}
 }
 
-func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
+func (s *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 	var bestMove ScoredMove
 	var wg = new(sync.WaitGroup)
-
-	var badMoves uint64
 
 	rack := core.NewConsumableRack(tiles)
 
@@ -80,14 +88,14 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 			for j := 0; j < 15; j++ {
 				for _, dir := range dirs {
 					wg.Add(1)
-					b.jobs <- Job{
+					s.jobs <- Job{
 						i:          i,
 						j:          j,
 						dir:        dir,
 						rack:       rack,
 						resultChan: results,
 						wg:         wg,
-						wordDB:     b.searchSpace,
+						wordDB:     s.searchSpace,
 					}
 				}
 			}
@@ -98,32 +106,23 @@ func (b *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 	}()
 
 	for result := range results {
-		if len(result.word) == 0 {
-			continue
-		}
 
-		if b.board.ValidateMove(result.word, result.row, result.col, result.dir, b.wordList) {
-			score := b.board.Score(result.word, result.row, result.col, result.dir)
+		score := s.board.Score(result.word, result.row, result.col, result.dir)
 
-			if score > bestMove.Score {
-				newWord := make([]core.Tile, len(result.word))
-				copy(newWord, result.word)
-
-				current := ScoredMove{
-					PlacedWord: core.PlacedWord{
-						Word:      newWord,
-						Row:       result.row,
-						Col:       result.col,
-						Direction: result.dir,
-					},
-					Score: score,
-				}
-
-				bestMove = current
+		if score > bestMove.Score {
+			current := ScoredMove{
+				PlacedWord: core.PlacedWord{
+					Word:      result.word,
+					Row:       result.row,
+					Col:       result.col,
+					Direction: result.dir,
+				},
+				Score: score,
 			}
-		} else {
-			atomic.AddUint64(&badMoves, 1)
+
+			bestMove = current
 		}
+
 	}
 
 	// fmt.Println(badMoves, "invalid moves played")
@@ -141,6 +140,10 @@ type WordTree interface {
 
 var blankA = core.Rune2Letter('a').ToTile(true)
 var blankZ = core.Rune2Letter('z').ToTile(true)
+
+func (s *SmartyAI) Kill() {
+	close(s.jobs)
+}
 
 func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
 	dRow, dCol := dir.Offsets()

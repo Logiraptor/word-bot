@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"math/rand"
+	"os"
+	"strconv"
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
@@ -24,16 +27,44 @@ func init() {
 
 type AI interface {
 	FindMoves(rack []core.Tile) []ai.ScoredMove
+	Kill()
 }
 
 func main() {
-	playGame(
-		func(b *core.Board) *Player {
-			return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), "Player 1")
-		}, func(b *core.Board) *Player {
-			return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), "Player 2")
-		},
-	)
+
+	resultFile, err := os.Create("results.csv")
+	if err != nil {
+		panic(err)
+	}
+	defer resultFile.Close()
+
+	wr := csv.NewWriter(resultFile)
+
+	wr.Write([]string{
+		"Smarty 1",
+		"Smarty 2",
+	})
+
+	for i := 0; i < 1000; i++ {
+
+		p1, p2 := playGame(
+			func(b *core.Board) *Player {
+				return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), "Smarty 1")
+			}, func(b *core.Board) *Player {
+				return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), "Smarty 2")
+			},
+		)
+
+		fmt.Println("GAME OVER")
+		fmt.Printf("Final Score %s = %d\n", p1.name, p1.score)
+		fmt.Printf("Final Score %s = %d\n", p2.name, p2.score)
+
+		wr.Write([]string{
+			strconv.Itoa(int(p1.score)),
+			strconv.Itoa(int(p2.score)),
+		})
+	}
+	wr.Flush()
 }
 
 type Player struct {
@@ -63,10 +94,15 @@ func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.Consu
 		return bag, false
 	}
 
+	newRack, ok := p.rack.Play(move.Word)
+	if !ok {
+		return bag, false
+	}
+
+	p.rack = newRack
+
 	score := board.Score(move.Word, move.Row, move.Col, move.Direction)
 	board.PlaceTiles(move.Word, move.Row, move.Col, move.Direction)
-
-	p.rack = p.rack.Play(move.Word)
 
 	bag, p.rack.Rack = bag.FillRack(p.rack.Rack, 7-len(p.rack.Rack))
 
@@ -75,15 +111,16 @@ func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.Consu
 	return bag, true
 }
 
-func playGame(a, b func(board *core.Board) *Player) {
-
+func playGame(a, b func(board *core.Board) *Player) (p1, p2 *Player) {
+	swapped := false
 	if rand.Intn(2) == 0 {
+		swapped = true
 		a, b = b, a
 	}
 
 	board := core.NewBoard()
-	p1 := a(board)
-	p2 := b(board)
+	p1 = a(board)
+	p2 = b(board)
 	bag := core.NewConsumableBag().Shuffle()
 
 	bag, p1.rack.Rack = bag.FillRack(p1.rack.Rack, 7)
@@ -96,12 +133,14 @@ func playGame(a, b func(board *core.Board) *Player) {
 	for bag.Count() > 0 && (p1Ok || p2Ok) {
 		bag, p1Ok = p1.takeTurn(board, bag)
 		bag, p2Ok = p2.takeTurn(board, bag)
-
-		board.Print()
-		fmt.Println(bag.Count(), p1Ok, p2Ok)
 	}
 
-	fmt.Println("GAME OVER")
-	fmt.Printf("Final Score %s = %d\n", p1.name, p1.score)
-	fmt.Printf("Final Score %s = %d\n", p2.name, p2.score)
+	p1.ai.Kill()
+	p2.ai.Kill()
+
+	if swapped {
+		p1, p2 = p2, p1
+	}
+
+	return p1, p2
 }

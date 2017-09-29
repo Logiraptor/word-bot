@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 // ConsumableRack manages a rack of tiles and allows efficient consumption of tiles
 type ConsumableRack struct {
 	Rack     []Tile
@@ -26,7 +28,7 @@ func (c ConsumableRack) CanConsume(i int) bool {
 	return c.consumed&(1<<uint(i)) == 0
 }
 
-func (c ConsumableRack) Play(tiles []Tile) ConsumableRack {
+func (c ConsumableRack) Play(tiles []Tile) (ConsumableRack, bool) {
 	newTiles := make([]Tile, len(c.Rack))
 	copy(newTiles, c.Rack)
 
@@ -39,10 +41,11 @@ outer:
 				continue outer
 			}
 		}
-		panic("Cannot play tile '" + t.String() + "'")
+		fmt.Printf("Cannot play tile '%s' with rack: %s, full rack is: %s\n", t.String(), tiles2String(newTiles), tiles2String(c.Rack))
+		return ConsumableRack{}, false
 	}
 
-	return NewConsumableRack(newTiles)
+	return NewConsumableRack(newTiles), true
 }
 
 func tilesEqual(a, b Tile) bool {
