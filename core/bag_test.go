@@ -36,8 +36,8 @@ func TestConsumableBagFillRack(t *testing.T) {
 	err := quick.Check(func(i byte) bool {
 		idx := int(i) % len(allTiles)
 		originalBag := NewConsumableBag()
-		rack := NewConsumableRack(make([]Tile, idx))
-		originalBag = originalBag.FillRack(rack.Rack)
+		rack := NewConsumableRack(nil)
+		originalBag, rack.Rack = originalBag.FillRack(rack.Rack, idx)
 		return assert.Equal(t, len(allTiles)-idx, originalBag.Count(), "Filling a rack with %d tiles should leave %d in the bag", idx, len(allTiles)-idx)
 	}, nil)
 	assert.NoError(t, err)
@@ -52,11 +52,11 @@ func TestConsumableBagShuffling(t *testing.T) {
 		originalBag := NewConsumableBag()
 		shuffledBag := originalBag.Shuffle()
 
-		originalRack := NewConsumableRack(make([]Tile, idx))
-		originalBag.FillRack(originalRack.Rack)
+		originalRack := NewConsumableRack(nil)
+		_, originalRack.Rack = originalBag.FillRack(originalRack.Rack, idx)
 
-		shuffledRack := NewConsumableRack(make([]Tile, idx))
-		shuffledBag.FillRack(shuffledRack.Rack)
+		shuffledRack := NewConsumableRack(nil)
+		_, shuffledRack.Rack = shuffledBag.FillRack(shuffledRack.Rack, idx)
 
 		return assert.Equal(t, originalBag.Count(), shuffledBag.Count(), "Shuffling should not change count") &&
 			assert.False(t, reflect.DeepEqual(originalRack.Rack, shuffledRack.Rack),
