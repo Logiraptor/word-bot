@@ -2,3 +2,10 @@ public/
 node_modules/
 gin-bin
 vendor
+word-bot
+*.test
+*.out
+*.pprof
+ai-showdown
+*.db
+*.csv

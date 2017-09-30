@@ -1,19 +1,22 @@
 package main
 
 import (
-	"encoding/csv"
+	"bytes"
 	"fmt"
 	"math/rand"
-	"os"
-	"strconv"
+	"os/exec"
+	"time"
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
 	"github.com/Logiraptor/word-bot/definitions"
+	"github.com/Logiraptor/word-bot/persist"
 	"github.com/Logiraptor/word-bot/wordlist"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 var wordDB *wordlist.Trie
+var commitHash []byte
 
 func init() {
 	builder := wordlist.NewTrieBuilder(151434)
@@ -23,48 +26,53 @@ func init() {
 	}
 
 	wordDB = builder.Build()
+
+	status, err := exec.Command("git", "status").Output()
+	if err != nil {
+		panic(err)
+	}
+
+	if bytes.Contains(status, []byte("Changes not staged for commit")) ||
+		bytes.Contains(status, []byte("Changes to be committed")) {
+		panic("There are uncommitted changes, please commit or discard to keep the logs accurate!")
+	}
+
+	commitHash, err = exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+	if err != nil {
+		panic(err)
+	}
 }
 
 type AI interface {
-	FindMoves(rack []core.Tile) []ai.ScoredMove
+	FindMoves(rack []core.Tile) []core.ScoredMove
+	Name() string
 	Kill()
 }
 
 func main() {
 
-	resultFile, err := os.Create("results.csv")
+	rand.Seed(time.Now().Unix())
+
+	db, err := persist.NewDB("results.db")
 	if err != nil {
 		panic(err)
 	}
-	defer resultFile.Close()
 
-	wr := csv.NewWriter(resultFile)
+	for i := 0; i < 10000; i++ {
 
-	wr.Write([]string{
-		"Smarty 1",
-		"Smarty 2",
-	})
-
-	for i := 0; i < 1000; i++ {
-
-		p1, p2 := playGame(
+		g := playGame(
 			func(b *core.Board) *Player {
-				return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), "Smarty 1")
+				return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), 1)
 			}, func(b *core.Board) *Player {
-				return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), "Smarty 2")
+				return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), 2)
 			},
 		)
 
-		fmt.Println("GAME OVER")
-		fmt.Printf("Final Score %s = %d\n", p1.name, p1.score)
-		fmt.Printf("Final Score %s = %d\n", p2.name, p2.score)
-
-		wr.Write([]string{
-			strconv.Itoa(int(p1.score)),
-			strconv.Itoa(int(p2.score)),
-		})
+		err := db.SaveGame(g)
+		if err != nil {
+			fmt.Println("ERROR SAVING GAME", err)
+		}
 	}
-	wr.Flush()
 }
 
 type Player struct {
@@ -74,29 +82,29 @@ type Player struct {
 	score core.Score
 }
 
-func NewPlayer(ai AI, name string) *Player {
+func NewPlayer(ai AI, n int) *Player {
 	return &Player{
 		ai:   ai,
-		name: name,
+		name: fmt.Sprintf("%s - %d - %s", ai.Name(), n, commitHash),
 		rack: core.NewConsumableRack(nil),
 	}
 }
 
-func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.ConsumableBag, bool) {
+func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.ConsumableBag, core.ScoredMove, bool) {
 	moves := p.ai.FindMoves(p.rack.Rack)
 	if len(moves) == 0 {
-		return bag, false
+		return bag, core.ScoredMove{}, false
 	}
 
 	move := moves[0]
 	if !board.ValidateMove(move.Word, move.Row, move.Col, move.Direction, wordDB) {
 		fmt.Printf("%s played an invalid move: %v!\n", p.name, move)
-		return bag, false
+		return bag, core.ScoredMove{}, false
 	}
 
 	newRack, ok := p.rack.Play(move.Word)
 	if !ok {
-		return bag, false
+		return bag, core.ScoredMove{}, false
 	}
 
 	p.rack = newRack
@@ -108,10 +116,12 @@ func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.Consu
 
 	p.score += score
 
-	return bag, true
+	return bag, move, true
 }
 
-func playGame(a, b func(board *core.Board) *Player) (p1, p2 *Player) {
+func playGame(a, b func(board *core.Board) *Player) persist.Game {
+	game := persist.Game{}
+
 	swapped := false
 	if rand.Intn(2) == 0 {
 		swapped = true
@@ -119,8 +129,9 @@ func playGame(a, b func(board *core.Board) *Player) (p1, p2 *Player) {
 	}
 
 	board := core.NewBoard()
-	p1 = a(board)
-	p2 = b(board)
+	p1 := a(board)
+	p2 := b(board)
+
 	bag := core.NewConsumableBag().Shuffle()
 
 	bag, p1.rack.Rack = bag.FillRack(p1.rack.Rack, 7)
@@ -128,11 +139,16 @@ func playGame(a, b func(board *core.Board) *Player) (p1, p2 *Player) {
 
 	var (
 		p1Ok, p2Ok = true, true
+		move       core.ScoredMove
 	)
 
 	for bag.Count() > 0 && (p1Ok || p2Ok) {
-		bag, p1Ok = p1.takeTurn(board, bag)
-		bag, p2Ok = p2.takeTurn(board, bag)
+		if bag, move, p1Ok = p1.takeTurn(board, bag); p1Ok {
+			game.AddMove(p1.name, move)
+		}
+		if bag, move, p2Ok = p2.takeTurn(board, bag); p2Ok {
+			game.AddMove(p2.name, move)
+		}
 	}
 
 	p1.ai.Kill()
@@ -142,5 +158,9 @@ func playGame(a, b func(board *core.Board) *Player) (p1, p2 *Player) {
 		p1, p2 = p2, p1
 	}
 
-	return p1, p2
+	fmt.Println("GAME OVER")
+	fmt.Printf("Final Score %s = %d\n", p1.name, p1.score)
+	fmt.Printf("Final Score %s = %d\n", p2.name, p2.score)
+
+	return game
 }

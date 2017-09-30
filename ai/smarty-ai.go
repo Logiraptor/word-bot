@@ -73,8 +73,8 @@ func searchWorker(s *SmartyAI, jobs <-chan Job) {
 	}
 }
 
-func (s *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
-	var bestMove ScoredMove
+func (s *SmartyAI) FindMoves(tiles []core.Tile) []core.ScoredMove {
+	var bestMove core.ScoredMove
 	var wg = new(sync.WaitGroup)
 
 	rack := core.NewConsumableRack(tiles)
@@ -110,7 +110,7 @@ func (s *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 		score := s.board.Score(result.word, result.row, result.col, result.dir)
 
 		if score > bestMove.Score {
-			current := ScoredMove{
+			current := core.ScoredMove{
 				PlacedWord: core.PlacedWord{
 					Word:      result.word,
 					Row:       result.row,
@@ -130,7 +130,7 @@ func (s *SmartyAI) FindMoves(tiles []core.Tile) []ScoredMove {
 	if bestMove.Word == nil {
 		return nil
 	}
-	return []ScoredMove{bestMove}
+	return []core.ScoredMove{bestMove}
 }
 
 type WordTree interface {
@@ -143,6 +143,10 @@ var blankZ = core.Rune2Letter('z').ToTile(true)
 
 func (s *SmartyAI) Kill() {
 	close(s.jobs)
+}
+
+func (s *SmartyAI) Name() string {
+	return "Smarty"
 }
 
 func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
