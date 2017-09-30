@@ -1,14 +1,17 @@
 package core
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 type Turn interface {
 	isTurn()
 }
 
 type ScoredMove struct {
-	Move  PlacedWord
-	Score Score
+	PlacedWord
+	Score
 }
 
 var _ Turn = ScoredMove{}
@@ -26,6 +29,10 @@ func (p ScoredMove) MarshalJSON() ([]byte, error) {
 		ScoredMove: p,
 		Type:       "scored_move",
 	})
+}
+
+func (s ScoredMove) String() string {
+	return fmt.Sprintf("(%s scores %d)", s.PlacedWord, s.Score)
 }
 
 type Pass struct{}

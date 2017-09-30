@@ -3,6 +3,7 @@ package ai
 import (
 	"fmt"
 	"sync"
+
 	"github.com/Logiraptor/word-bot/core"
 )
 
@@ -18,22 +19,13 @@ func NewBruteForceAI(board *core.Board, wordList core.WordList) *BruteForceAI {
 	}
 }
 
-type ByScore []ScoredMove
+type ByScore []core.ScoredMove
 
 func (b ByScore) Len() int           { return len(b) }
 func (b ByScore) Less(i, j int) bool { return b[i].Score > b[j].Score }
 func (b ByScore) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
 
-type ScoredMove struct {
-	core.PlacedWord
-	core.Score
-}
-
-func (s ScoredMove) String() string {
-	return fmt.Sprintf("(%s scores %d)", s.PlacedWord, s.Score)
-}
-
-func (b *BruteForceAI) FindMoves(rack []core.Tile) []ScoredMove {
+func (b *BruteForceAI) FindMoves(rack []core.Tile) []core.ScoredMove {
 	words := permute(rack)
 
 	// fmt.Println("Checking", len(words), "words")
@@ -83,12 +75,12 @@ func (b *BruteForceAI) FindMoves(rack []core.Tile) []ScoredMove {
 		close(validChan)
 	}()
 
-	var bestMove ScoredMove
+	var bestMove core.ScoredMove
 	numMoves := 0
 	for v := range validChan {
 		numMoves++
 
-		current := ScoredMove{
+		current := core.ScoredMove{
 			PlacedWord: v,
 			Score:      b.board.Score(v.Word, v.Row, v.Col, v.Direction),
 		}
@@ -104,7 +96,7 @@ func (b *BruteForceAI) FindMoves(rack []core.Tile) []ScoredMove {
 
 	// fmt.Println("Finished in", dur)
 
-	return []ScoredMove{bestMove}
+	return []core.ScoredMove{bestMove}
 }
 
 func permute(rack []core.Tile) [][]core.Tile {
