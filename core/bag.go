@@ -1,8 +1,6 @@
 package core
 
 import (
-	"math/bits"
-	"math/rand"
 	"strings"
 )
 
@@ -11,73 +9,15 @@ import (
 const allLetters = "aaaaaaaaabbccddddeeeeeeeeeeeeffggghhiiiiiiiiijkllllmmnnnnnnooooooooppqrrrrrrssssttttttuuuuvvwwxyyz"
 
 var allTiles = MakeTiles(MakeWord(allLetters+"aa"), strings.Repeat("x", len(allLetters))+"  ")
+var defaultBag TileSet
 
-type ConsumableBag struct {
-	tiles    []Tile
-	consumed [2]uint64
-}
-
-func NewConsumableBag() ConsumableBag {
-	allTilesCopy := make([]Tile, len(allTiles))
-	copy(allTilesCopy, allTiles)
-	return ConsumableBag{
-		tiles: allTilesCopy,
+func init() {
+	defaultBag = NewEmptyTileSet()
+	for _, t := range allTiles {
+		defaultBag.Add(t)
 	}
 }
 
-// Shuffle randomizes the order of tiles inside the bag
-func (c ConsumableBag) Shuffle() ConsumableBag {
-	result := c
-	result.tiles = make([]Tile, len(allTiles))
-	copy(result.tiles, allTiles)
-	for i := len(result.tiles) - 1; i > 0; i-- {
-		j := rand.Intn(i)
-		result.tiles[i], result.tiles[j] = result.tiles[j], result.tiles[i]
-
-		subFieldI := i / 64
-		remI := i % 64
-		bitI := result.consumed[subFieldI] & (1 << uint(remI))
-
-		subFieldJ := j / 64
-		remJ := j % 64
-		bitJ := result.consumed[subFieldJ] & (1 << uint(remJ))
-
-		result.consumed[subFieldI] |= (bitJ << uint(remI))
-		result.consumed[subFieldJ] |= (bitI << uint(remJ))
-	}
-
-	return result
-}
-
-// Consume uses up a tile in the rack
-func (c ConsumableBag) Consume(i int) ConsumableBag {
-	result := c
-	subField := i / 64
-	rem := i % 64
-	result.consumed[subField] |= (1 << uint(rem))
-	return result
-}
-
-// CanConsume returns true if the ith tile is available to use
-func (c ConsumableBag) CanConsume(i int) bool {
-	subField := i / 64
-	rem := i % 64
-	return c.consumed[subField]&(1<<uint(rem)) == 0
-}
-
-func (c ConsumableBag) FillRack(tiles []Tile, n int) (ConsumableBag, []Tile) {
-	i := 0
-	for x := 0; x < len(c.tiles) && i < n; x++ {
-		if c.CanConsume(x) {
-			tiles = append(tiles, c.tiles[x])
-			c = c.Consume(x)
-			i++
-		}
-	}
-	return c, tiles
-}
-
-func (c ConsumableBag) Count() int {
-	consumed := bits.OnesCount64(c.consumed[0]) + bits.OnesCount64(c.consumed[1])
-	return len(allTiles) - consumed
+func NewConsumableBag() TileSet {
+	return defaultBag
 }

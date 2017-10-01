@@ -114,6 +114,12 @@ func NewBoard() *Board {
 	return b
 }
 
+func (b *Board) Copy() *Board {
+	result := new(Board)
+	result.Cells = b.Cells
+	return result
+}
+
 // Save encodes a representation of the board to the given file
 func (b *Board) Save(filename string) error {
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0660)

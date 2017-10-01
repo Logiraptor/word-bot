@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
 )
@@ -15,7 +16,7 @@ type Server struct {
 }
 
 type AI interface {
-	FindMoves(rack []core.Tile) []ai.ScoredMove
+	FindMoves(rack []core.Tile) []core.ScoredMove
 }
 
 func toTiles(word string) []core.Tile {

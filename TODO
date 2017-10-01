@@ -1,0 +1,29 @@
+BEFORE:
+goos: linux
+goarch: amd64
+pkg: github.com/Logiraptor/word-bot/ai
+BenchmarkSmarty     	    1000	   1818383 ns/op	     596 B/op	       4 allocs/op
+BenchmarkSmarty-2   	    2000	    992543 ns/op	     594 B/op	       4 allocs/op
+BenchmarkSmarty-4   	    2000	    661927 ns/op	     595 B/op	       4 allocs/op
+BenchmarkSmarty-8   	    2000	    685328 ns/op	     595 B/op	       4 allocs/op
+BenchmarkSearch     	 1000000	      1216 ns/op	     248 B/op	      31 allocs/op
+BenchmarkSearch-2   	 1000000	      1066 ns/op	     248 B/op	      31 allocs/op
+BenchmarkSearch-4   	 1000000	      1086 ns/op	     248 B/op	      31 allocs/op
+BenchmarkSearch-8   	 1000000	      1089 ns/op	     248 B/op	      31 allocs/op
+PASS
+ok  	github.com/Logiraptor/word-bot/ai	11.495s
+
+AFTER TILESET (no optimization)
+goos: linux
+goarch: amd64
+pkg: github.com/Logiraptor/word-bot/ai
+BenchmarkSmarty     	      50	  80197697 ns/op	17955071 B/op	  552531 allocs/op
+BenchmarkSmarty-2   	      30	  44463697 ns/op	17955177 B/op	  552532 allocs/op
+BenchmarkSmarty-4   	      50	  24932718 ns/op	17955278 B/op	  552532 allocs/op
+BenchmarkSmarty-8   	      50	  32708513 ns/op	17955452 B/op	  552533 allocs/op
+BenchmarkSearch     	 1000000	      2064 ns/op	     960 B/op	      48 allocs/op
+BenchmarkSearch-2   	 1000000	      1614 ns/op	     960 B/op	      48 allocs/op
+BenchmarkSearch-4   	 1000000	      1677 ns/op	     960 B/op	      48 allocs/op
+BenchmarkSearch-8   	 1000000	      1717 ns/op	     960 B/op	      48 allocs/op
+PASS
+ok  	github.com/Logiraptor/word-bot/ai	15.549s

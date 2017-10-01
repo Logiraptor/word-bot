@@ -125,4 +125,12 @@ func (db *DB) PrintStats() {
 
 	`
 
+	// Avg score per player
+	_ = `
+	SELECT moves.player, AVG(moves.score)
+	FROM moves
+	GROUP BY player
+	
+	`
+
 }

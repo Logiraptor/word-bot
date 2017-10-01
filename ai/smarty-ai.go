@@ -35,7 +35,7 @@ func NewSmartyAI(board *core.Board, wordList core.WordList, searchSpace WordTree
 type Job struct {
 	i, j       int
 	dir        core.Direction
-	rack       core.ConsumableRack
+	rack       core.TileSet
 	wordDB     WordTree
 	resultChan chan<- Result
 	wg         *sync.WaitGroup
@@ -138,8 +138,8 @@ type WordTree interface {
 	CanBranch(t core.Tile) (WordTree, bool)
 }
 
-var blankA = core.Rune2Letter('a').ToTile(true)
-var blankZ = core.Rune2Letter('z').ToTile(true)
+var aTile = core.Rune2Letter('a').ToTile(false)
+var zTile = core.Rune2Letter('z').ToTile(false)
 
 func (s *SmartyAI) Kill() {
 	close(s.jobs)
@@ -149,7 +149,7 @@ func (s *SmartyAI) Name() string {
 	return "Smarty"
 }
 
-func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.TileSet, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
 	dRow, dCol := dir.Offsets()
 	if wordDB.IsTerminal() {
 		callback(prev)
@@ -164,26 +164,20 @@ func (s *SmartyAI) Search(i, j int, dir core.Direction, rack core.ConsumableRack
 			s.stepForward(i+dRow, j+dCol, dir, rack, next, prev, callback)
 		}
 	} else {
-		for i, letter := range rack.Rack {
-			if !rack.CanConsume(i) {
+		for r := aTile; r < zTile; r++ {
+			if !rack.CanConsume(r) {
 				continue
 			}
-			if letter.IsBlank() {
-				for r := blankA; r <= blankZ; r++ {
-					if next, ok := wordDB.CanBranch(r); ok {
-						s.stepForward(i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, r), callback)
-					}
-				}
-			} else {
-				if next, ok := wordDB.CanBranch(letter); ok {
-					s.stepForward(i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, letter), callback)
-				}
+
+			if next, ok := wordDB.CanBranch(r); ok {
+				newRack, tile := rack.Consume(r)
+				s.stepForward(i+dRow, j+dCol, dir, newRack, next, append(prev, tile), callback)
 			}
 		}
 	}
 }
 
-func (s *SmartyAI) stepForward(i, j int, dir core.Direction, rack core.ConsumableRack, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SmartyAI) stepForward(i, j int, dir core.Direction, rack core.TileSet, wordDB WordTree, prev []core.Tile, callback func([]core.Tile)) {
 	// back up perpendicular to advancing direction until I hit a blank
 	var (
 		ok                 bool
