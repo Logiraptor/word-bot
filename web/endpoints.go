@@ -5,13 +5,19 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
 )
 
+type DB interface {
+	Save([]core.PlacedWord) error
+}
+
 type Server struct {
 	WordTree    ai.WordTree
 	SearchSpace core.WordList
+	DB          DB
 }
 
 type AI interface {
@@ -34,11 +40,32 @@ type TileJS struct {
 	Bonus  string
 }
 
+func (t TileJS) ToTile() core.Tile {
+	return core.Rune2Letter([]rune(t.Letter)[0]).ToTile(t.Blank)
+}
+
 type Move struct {
 	Tiles []TileJS `json:"tiles"`
 	Row   int      `json:"row"`
 	Col   int      `json:"col"`
 	Dir   string   `json:"direction"` // vertical / horizontal
+}
+
+func (m Move) ToPlacedWord() core.PlacedWord {
+	dir := core.Horizontal
+	if m.Dir == "vertical" {
+		dir = core.Vertical
+	}
+	w := make([]core.Tile, 0, len(m.Tiles))
+	for _, t := range m.Tiles {
+		w = append(w, t.ToTile())
+	}
+	return core.PlacedWord{
+		Word:      w,
+		Row:       m.Row,
+		Col:       m.Col,
+		Direction: dir,
+	}
 }
 
 type ScoredMoveJS struct {
@@ -165,4 +192,29 @@ func (s Server) RenderBoard(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	json.NewEncoder(rw).Encode(output)
+}
+
+func (s Server) SaveGame(rw http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+		}
+	}()
+	var moves MoveRequest
+	err := json.NewDecoder(req.Body).Decode(&moves)
+	if err != nil {
+		http.Error(rw, "JSON parsing failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	placedWords := make([]core.PlacedWord, 0, len(moves.Moves))
+	for _, m := range moves.Moves {
+		placedWords = append(placedWords, m.ToPlacedWord())
+	}
+
+	err = s.DB.Save(placedWords)
+	if err != nil {
+		http.Error(rw, "Saving failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

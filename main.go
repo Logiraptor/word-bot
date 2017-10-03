@@ -28,6 +28,7 @@ func main() {
 	}
 	http.HandleFunc("/play", s.GetMove)
 	http.HandleFunc("/render", s.RenderBoard)
+	http.HandleFunc("/save", s.SaveGame)
 	http.Handle("/", http.FileServer(http.Dir("frontend/public")))
 
 	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
