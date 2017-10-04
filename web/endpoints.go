@@ -8,16 +8,13 @@ import (
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
+	"github.com/Logiraptor/word-bot/persist"
 )
-
-type DB interface {
-	Save([]core.PlacedTiles) error
-}
 
 type Server struct {
 	WordTree    ai.WordTree
 	SearchSpace core.WordList
-	DB          DB
+	DB          *persist.DB
 }
 
 type AI interface {
@@ -45,10 +42,11 @@ func (t TileJS) ToTile() core.Tile {
 }
 
 type Move struct {
-	Tiles []TileJS `json:"tiles"`
-	Row   int      `json:"row"`
-	Col   int      `json:"col"`
-	Dir   string   `json:"direction"` // vertical / horizontal
+	Tiles  []TileJS `json:"tiles"`
+	Row    int      `json:"row"`
+	Col    int      `json:"col"`
+	Dir    string   `json:"direction"` // vertical / horizontal
+	Player string   `json:"player"`
 }
 
 func (m Move) ToPlacedTiles() core.PlacedTiles {
@@ -195,12 +193,21 @@ func (s Server) SaveGame(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	placedWords := make([]core.PlacedTiles, 0, len(moves.Moves))
+	b := core.NewBoard()
+
+	game := persist.Game{}
 	for _, m := range moves.Moves {
-		placedWords = append(placedWords, m.ToPlacedTiles())
+		placed := m.ToPlacedTiles()
+		score := b.Score(placed)
+		b.PlaceTiles(placed)
+		fmt.Println(m)
+		game.AddMove(m.Player, core.ScoredMove{
+			Score:       score,
+			PlacedTiles: placed,
+		})
 	}
 
-	err = s.DB.Save(placedWords)
+	err = s.DB.SaveGame(game)
 	if err != nil {
 		http.Error(rw, "Saving failed: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -24,8 +24,8 @@ func BenchmarkSmarty(b *testing.B) {
 	board := core.NewBoard()
 	smarty := ai.NewSmartyAI(board, wordDB, wordDB)
 
-	board.PlaceTiles(core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical)
-	board.PlaceTiles(core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal)
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical})
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -38,8 +38,8 @@ func BenchmarkSearch(b *testing.B) {
 	board := core.NewBoard()
 	smarty := ai.NewSmartyAI(board, wordDB, wordDB)
 
-	board.PlaceTiles(core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical)
-	board.PlaceTiles(core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal)
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical})
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal})
 	prev := []core.Tile{}
 
 	b.ResetTimer()

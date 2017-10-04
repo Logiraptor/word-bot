@@ -11,12 +11,7 @@ type DB struct {
 	db *gorm.DB
 }
 
-func NewDB(filename string) (*DB, error) {
-	db, err := gorm.Open("sqlite3", filename)
-	if err != nil {
-		return nil, err
-	}
-
+func NewDB(db *gorm.DB) (*DB, error) {
 	db.AutoMigrate(Game{}, Move{})
 
 	return &DB{

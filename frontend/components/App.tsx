@@ -1,8 +1,9 @@
-import { Move, Tile, Board } from "../models/core";
 import * as React from "react";
-import { RackInput } from "./RackInput";
-import { BoardView } from "./BoardView";
+
+import { Board, Move, Tile } from "../models/core";
 import { GameService, StorageService } from "../services/game";
+import { BoardView } from "./BoardView";
+import { RackInput } from "./RackInput";
 
 export interface State {
     moves: Move[];
@@ -57,6 +58,16 @@ export class App extends React.Component<{ gameService: GameService; storage: St
                         }}
                     />
                     <ScoreBoard moves={this.state.moves} scores={this.state.scores} />
+                    <button
+                        onClick={() => {
+                            this.props.gameService.save({
+                                moves: this.state.moves,
+                                rack: this.state.rack,
+                            });
+                        }}
+                    >
+                        Save Game
+                    </button>
                     <div className="player-rack">
                         <RackInput
                             Tiles={this.state.rack}
