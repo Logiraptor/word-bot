@@ -64,14 +64,14 @@ func (b Bonus) ToString() string {
 	return ""
 }
 
-// PlacedWord represents a set of tiles placed on a board
-type PlacedWord struct {
+// PlacedTiles represents a set of tiles placed on a board
+type PlacedTiles struct {
 	Word      []Tile
 	Row, Col  int
 	Direction Direction
 }
 
-func (p PlacedWord) String() string {
+func (p PlacedTiles) String() string {
 	word := tiles2String(p.Word)
 	return fmt.Sprintf("(%d,%d,%v: %s)", p.Row, p.Col, p.Direction, word)
 }
@@ -133,15 +133,15 @@ func (b *Board) HasTile(row, col int) bool {
 }
 
 // ValidateMove returns true if the given move is legal
-func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction, wordList WordList) bool {
+func (b *Board) ValidateMove(move PlacedTiles, wordList WordList) bool {
 
 	// Check that it connects to other words
 	connectsToOtherWords := false
-	dRow, dCol := direction.Offsets()
+	dRow, dCol := move.Direction.Offsets()
 	wordPos := 0
-	for progress := 0; wordPos < len(word); progress++ {
-		tileRow := row + dRow*progress
-		tileCol := col + dCol*progress
+	for progress := 0; wordPos < len(move.Word); progress++ {
+		tileRow := move.Row + dRow*progress
+		tileCol := move.Col + dCol*progress
 
 		if b.OutOfBounds(tileRow, tileCol) {
 			return false
@@ -166,7 +166,7 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction, wor
 		return false
 	}
 
-	words := b.FindNewWords(word, row, col, direction)
+	words := b.FindNewWords(move)
 	for _, word := range words {
 		if !wordList.Contains(tiles2Word(word.Word)) {
 			return false
@@ -176,19 +176,19 @@ func (b *Board) ValidateMove(word []Tile, row, col int, direction Direction, wor
 }
 
 // Score computes the score for a given move. Score does not validate the move.
-func (b *Board) Score(word []Tile, row, col int, direction Direction) Score {
-	words := b.FindNewWords(word, row, col, direction)
+func (b *Board) Score(move PlacedTiles) Score {
+	words := b.FindNewWords(move)
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("Panic caught while scoring: %s which yielded %s\n", PlacedWord{word, row, col, direction}, words)
+			fmt.Printf("Panic caught while scoring: %s which yielded %s\n", move, words)
 			panic(r)
 		}
 	}()
 
 	total := Score(0)
 	for _, word := range words {
-		wordScore := b.scoreWord(word.Word, word.Row, word.Col, word.Direction)
+		wordScore := b.scoreWord(word)
 		total += wordScore
 	}
 	return total
@@ -198,17 +198,17 @@ func (b *Board) OutOfBounds(row, col int) bool {
 	return row < 0 || row >= 15 || col < 0 || col >= 15
 }
 
-func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score {
-	dRow, dCol := direction.Offsets()
+func (b *Board) scoreWord(move PlacedTiles) Score {
+	dRow, dCol := move.Direction.Offsets()
 	sum := Bonus(0)
 	wordBonus := Bonus(1)
 	additionalBonus := Bonus(0)
 	lettersUsed := 0
-	for i, letter := range word {
-		tileRow := row + (i * dRow)
-		tileCol := col + (i * dCol)
+	for i, letter := range move.Word {
+		tileRow := move.Row + (i * dRow)
+		tileCol := move.Col + (i * dCol)
 		if b.OutOfBounds(tileRow, tileCol) {
-			panic(fmt.Sprintf("attempted to score word %s - OUT OF BOUNDS (moving [%d,%d])", PlacedWord{word, row, col, direction}, dRow, dCol))
+			panic(fmt.Sprintf("attempted to score word %s - OUT OF BOUNDS (moving [%d,%d])", move, dRow, dCol))
 		}
 		letterBonus := Bonus(1)
 		if !b.HasTile(tileRow, tileCol) {
@@ -234,48 +234,48 @@ func (b *Board) scoreWord(word []Tile, row, col int, direction Direction) Score 
 }
 
 // FindNewWords returns all net-new words produced by the given move.
-func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []PlacedWord {
-	dRow, dCol := direction.Offsets()
-	words := []PlacedWord{}
+func (b *Board) FindNewWords(move PlacedTiles) []PlacedTiles {
+	dRow, dCol := move.Direction.Offsets()
+	words := []PlacedTiles{}
 	progress := 0
 	wordPos := 0
 
 	var letters []Tile
-	letters = b.scan(letters, row-dRow, col-dCol, -dRow, -dCol)
+	letters = b.scan(letters, move.Row-dRow, move.Col-dCol, -dRow, -dCol)
 	reverse(letters)
 	leftLen := len(letters)
 
-	tileRow := row + dRow*progress
-	tileCol := col + dCol*progress
-	for !b.OutOfBounds(tileRow, tileCol) && wordPos < len(word) {
+	tileRow := move.Row + dRow*progress
+	tileCol := move.Col + dCol*progress
+	for !b.OutOfBounds(tileRow, tileCol) && wordPos < len(move.Word) {
 
 		if b.HasTile(tileRow, tileCol) {
 			letters = append(letters, b.Cells[tileRow][tileCol].Tile)
 		} else {
-			subWord, ok := b.GrowWord(word[wordPos], tileRow, tileCol, !direction)
+			subWord, ok := b.GrowWord(move.Word[wordPos], tileRow, tileCol, !move.Direction)
 			if ok {
 				words = append(words, subWord)
 			}
-			letters = append(letters, word[wordPos])
+			letters = append(letters, move.Word[wordPos])
 			wordPos++
 		}
 
 		progress++
-		tileRow = row + dRow*progress
-		tileCol = col + dCol*progress
+		tileRow = move.Row + dRow*progress
+		tileCol = move.Col + dCol*progress
 	}
 
 	// Grow placed word
 
 	letters = b.scan(letters,
-		row+dRow*(len(letters)-leftLen),
-		col+dCol*(len(letters)-leftLen),
+		move.Row+dRow*(len(letters)-leftLen),
+		move.Col+dCol*(len(letters)-leftLen),
 		dRow, dCol)
 
-	words = append(words, PlacedWord{
-		Col:       col - dCol*leftLen,
-		Row:       row - dRow*leftLen,
-		Direction: direction,
+	words = append(words, PlacedTiles{
+		Col:       move.Col - dCol*leftLen,
+		Row:       move.Row - dRow*leftLen,
+		Direction: move.Direction,
 		Word:      letters,
 	})
 
@@ -283,7 +283,7 @@ func (b *Board) FindNewWords(word []Tile, row, col int, direction Direction) []P
 }
 
 // GrowWord finds the full contiguous word at a given position
-func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool) {
+func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedTiles, bool) {
 	dRow, dCol := dir.Offsets()
 
 	var letters []Tile
@@ -293,7 +293,7 @@ func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool)
 	letters = append(letters, l)
 	letters = b.scan(letters, row+dRow, col+dCol, dRow, dCol)
 
-	return PlacedWord{
+	return PlacedTiles{
 		Col:       col - lenLeft*dCol,
 		Row:       row - lenLeft*dRow,
 		Direction: dir,
@@ -302,26 +302,25 @@ func (b *Board) GrowWord(l Tile, row, col int, dir Direction) (PlacedWord, bool)
 }
 
 // PlaceTiles places tiles. It does not validate the move.
-func (b *Board) PlaceTiles(tiles []Tile, row, col int, direction Direction) []Tile {
-	dRow, dCol := direction.Offsets()
+func (b *Board) PlaceTiles(move PlacedTiles) []Tile {
+	dRow, dCol := move.Direction.Offsets()
 	progress := 0
 	wordPos := 0
-	for wordPos < len(tiles) {
-		tileRow := row + progress*dRow
-		tileCol := col + progress*dCol
+	for wordPos < len(move.Word) {
+		tileRow := move.Row + progress*dRow
+		tileCol := move.Col + progress*dCol
 
 		if b.OutOfBounds(tileRow, tileCol) {
-			panic(fmt.Sprintf("attempted to place word %s - OUT OF BOUNDS (moving [%d,%d]) (at [%d,%d])",
-				PlacedWord{tiles, row, col, direction}, dRow, dCol, tileRow, tileCol))
+			panic(fmt.Sprintf("attempted to place word %s - OUT OF BOUNDS (moving [%d,%d]) (at [%d,%d])", move, dRow, dCol, tileRow, tileCol))
 		}
 
 		if !b.HasTile(tileRow, tileCol) {
-			b.Cells[tileRow][tileCol].Tile = tiles[wordPos]
+			b.Cells[tileRow][tileCol].Tile = move.Word[wordPos]
 			wordPos++
 		}
 		progress++
 	}
-	return tiles
+	return move.Word
 }
 
 // Print prints the board to the console

@@ -11,7 +11,7 @@ import (
 )
 
 type DB interface {
-	Save([]core.PlacedWord) error
+	Save([]core.PlacedTiles) error
 }
 
 type Server struct {
@@ -21,7 +21,7 @@ type Server struct {
 }
 
 type AI interface {
-	FindMoves(rack []core.Tile) []ai.ScoredMove
+	FindMoves(rack []core.Tile) []core.ScoredMove
 }
 
 func toTiles(word string) []core.Tile {
@@ -51,17 +51,13 @@ type Move struct {
 	Dir   string   `json:"direction"` // vertical / horizontal
 }
 
-func (m Move) ToPlacedWord() core.PlacedWord {
+func (m Move) ToPlacedTiles() core.PlacedTiles {
 	dir := core.Horizontal
 	if m.Dir == "vertical" {
 		dir = core.Vertical
 	}
-	w := make([]core.Tile, 0, len(m.Tiles))
-	for _, t := range m.Tiles {
-		w = append(w, t.ToTile())
-	}
-	return core.PlacedWord{
-		Word:      w,
+	return core.PlacedTiles{
+		Word:      jsTilesToTiles(m.Tiles),
 		Row:       m.Row,
 		Col:       m.Col,
 		Direction: dir,
@@ -121,12 +117,7 @@ func (s Server) GetMove(rw http.ResponseWriter, req *http.Request) {
 
 	b := core.NewBoard()
 	for _, move := range moves.Moves {
-		dir := core.Vertical
-		if move.Dir == "horizontal" {
-			dir = core.Horizontal
-		}
-
-		b.PlaceTiles(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
+		b.PlaceTiles(move.ToPlacedTiles())
 	}
 
 	ai := ai.NewSmartyAI(b, s.SearchSpace, s.WordTree)
@@ -163,12 +154,9 @@ func (s Server) RenderBoard(rw http.ResponseWriter, req *http.Request) {
 	output.Scores = make([]core.Score, len(moves.Moves))
 	b := core.NewBoard()
 	for i, move := range moves.Moves {
-		dir := core.Vertical
-		if move.Dir == "horizontal" {
-			dir = core.Horizontal
-		}
-		output.Scores[i] = b.Score(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
-		b.PlaceTiles(jsTilesToTiles(move.Tiles), move.Row, move.Col, dir)
+		pt := move.ToPlacedTiles()
+		output.Scores[i] = b.Score(pt)
+		b.PlaceTiles(pt)
 	}
 
 	for i, row := range b.Cells {
@@ -207,9 +195,9 @@ func (s Server) SaveGame(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	placedWords := make([]core.PlacedWord, 0, len(moves.Moves))
+	placedWords := make([]core.PlacedTiles, 0, len(moves.Moves))
 	for _, m := range moves.Moves {
-		placedWords = append(placedWords, m.ToPlacedWord())
+		placedWords = append(placedWords, m.ToPlacedTiles())
 	}
 
 	err = s.DB.Save(placedWords)

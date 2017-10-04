@@ -10,7 +10,7 @@ type Turn interface {
 }
 
 type ScoredMove struct {
-	PlacedWord
+	PlacedTiles
 	Score
 }
 
@@ -32,7 +32,7 @@ func (p ScoredMove) MarshalJSON() ([]byte, error) {
 }
 
 func (s ScoredMove) String() string {
-	return fmt.Sprintf("(%s scores %d)", s.PlacedWord, s.Score)
+	return fmt.Sprintf("(%s scores %d)", s.PlacedTiles, s.Score)
 }
 
 type Pass struct{}
@@ -50,7 +50,7 @@ func (p Pass) MarshalJSON() ([]byte, error) {
 }
 
 type ChallengeWord struct {
-	Move PlacedWord
+	Move PlacedTiles
 }
 
 var _ Turn = ChallengeWord{}

@@ -37,14 +37,8 @@ type Job struct {
 	dir        core.Direction
 	rack       core.ConsumableRack
 	wordDB     WordTree
-	resultChan chan<- Result
+	resultChan chan<- core.PlacedTiles
 	wg         *sync.WaitGroup
-}
-
-type Result struct {
-	word     []core.Tile
-	row, col int
-	dir      core.Direction
 }
 
 func searchWorker(s *SmartyAI, jobs <-chan Job) {
@@ -55,16 +49,16 @@ func searchWorker(s *SmartyAI, jobs <-chan Job) {
 				return
 			}
 
-			result := Result{
-				word: word,
-				row:  job.i,
-				col:  job.j,
-				dir:  job.dir,
+			result := core.PlacedTiles{
+				Word:      word,
+				Row:       job.i,
+				Col:       job.j,
+				Direction: job.dir,
 			}
-			if s.board.ValidateMove(result.word, result.row, result.col, result.dir, s.wordList) {
-				newWord := make([]core.Tile, len(result.word))
-				copy(newWord, result.word)
-				result.word = newWord
+			if s.board.ValidateMove(result, s.wordList) {
+				newWord := make([]core.Tile, len(result.Word))
+				copy(newWord, result.Word)
+				result.Word = newWord
 
 				job.resultChan <- result
 			}
@@ -81,7 +75,7 @@ func (s *SmartyAI) FindMoves(tiles []core.Tile) []core.ScoredMove {
 
 	dirs := []core.Direction{core.Horizontal, core.Vertical}
 
-	results := make(chan Result, 10)
+	results := make(chan core.PlacedTiles, 10)
 
 	go func() {
 		for i := 0; i < 15; i++ {
@@ -107,17 +101,12 @@ func (s *SmartyAI) FindMoves(tiles []core.Tile) []core.ScoredMove {
 
 	for result := range results {
 
-		score := s.board.Score(result.word, result.row, result.col, result.dir)
+		score := s.board.Score(result)
 
 		if score > bestMove.Score {
 			current := core.ScoredMove{
-				PlacedWord: core.PlacedWord{
-					Word:      result.word,
-					Row:       result.row,
-					Col:       result.col,
-					Direction: result.dir,
-				},
-				Score: score,
+				PlacedTiles: result,
+				Score:       score,
 			}
 
 			bestMove = current

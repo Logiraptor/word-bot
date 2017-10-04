@@ -97,7 +97,7 @@ func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.Consu
 	}
 
 	move := moves[0]
-	if !board.ValidateMove(move.Word, move.Row, move.Col, move.Direction, wordDB) {
+	if !board.ValidateMove(move.PlacedTiles, wordDB) {
 		fmt.Printf("%s played an invalid move: %v!\n", p.name, move)
 		return bag, core.ScoredMove{}, false
 	}
@@ -109,8 +109,8 @@ func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.Consu
 
 	p.rack = newRack
 
-	score := board.Score(move.Word, move.Row, move.Col, move.Direction)
-	board.PlaceTiles(move.Word, move.Row, move.Col, move.Direction)
+	score := board.Score(move.PlacedTiles)
+	board.PlaceTiles(move.PlacedTiles)
 
 	bag, p.rack.Rack = bag.FillRack(p.rack.Rack, 7-len(p.rack.Rack))
 

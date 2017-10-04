@@ -32,7 +32,7 @@ func (b *BruteForceAI) FindMoves(rack []core.Tile) []core.ScoredMove {
 	// start := time.Now()
 	fmt.Println()
 
-	validChan := make(chan core.PlacedWord, 100)
+	validChan := make(chan core.PlacedTiles, 100)
 	wg := new(sync.WaitGroup)
 	for i := 0; i < 15; i++ {
 		wg.Add(1)
@@ -48,8 +48,8 @@ func (b *BruteForceAI) FindMoves(rack []core.Tile) []core.ScoredMove {
 						continue
 					}
 
-					if b.board.ValidateMove(permutedWord, i, j, core.Horizontal, b.wordList) {
-						validChan <- core.PlacedWord{
+					if b.board.ValidateMove(core.PlacedTiles{Word: permutedWord, Row: i, Col: j, Direction: core.Horizontal}, b.wordList) {
+						validChan <- core.PlacedTiles{
 							Word:      permutedWord,
 							Row:       i,
 							Col:       j,
@@ -57,8 +57,8 @@ func (b *BruteForceAI) FindMoves(rack []core.Tile) []core.ScoredMove {
 						}
 					}
 
-					if b.board.ValidateMove(permutedWord, i, j, core.Vertical, b.wordList) {
-						validChan <- core.PlacedWord{
+					if b.board.ValidateMove(core.PlacedTiles{Word: permutedWord, Row: i, Col: j, Direction: core.Vertical}, b.wordList) {
+						validChan <- core.PlacedTiles{
 							Word:      permutedWord,
 							Row:       i,
 							Col:       j,
@@ -81,8 +81,8 @@ func (b *BruteForceAI) FindMoves(rack []core.Tile) []core.ScoredMove {
 		numMoves++
 
 		current := core.ScoredMove{
-			PlacedWord: v,
-			Score:      b.board.Score(v.Word, v.Row, v.Col, v.Direction),
+			PlacedTiles: v,
+			Score:       b.board.Score(v),
 		}
 
 		if current.Score > bestMove.Score {
