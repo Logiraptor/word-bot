@@ -2,12 +2,16 @@ language: go
 go:
 - '1.9'
 before_deploy:
+  - go get github.com/gopherjs/gopherjs
+  - go install github.com/gopherjs/gopherjs
   - go get github.com/kardianos/govendor
   - govendor init
   - govendor add +external
   - govendor add +local
-  - docker run --rm  -v $(pwd)/frontend:/home/ws -w /home/ws node yarn
-  - docker run --rm  -v $(pwd)/frontend:/home/ws -w /home/ws node yarn build
+  - pushd frontend/
+  - yarn
+  - yarn build
+  - popd
 deploy:
   provider: cloudfoundry
   api: api.run.pez.pivotal.io
