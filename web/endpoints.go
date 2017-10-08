@@ -116,14 +116,18 @@ func (s Server) GetMove(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	b := core.NewBoard()
+	bag := core.NewConsumableBag()
+	bag = bag.ConsumeTiles(jsTilesToTiles(moves.Rack))
 	for _, move := range moves.Moves {
-		b.PlaceTiles(move.ToPlacedTiles())
+		pt := move.ToPlacedTiles()
+		b.PlaceTiles(pt)
+		bag = bag.ConsumeTiles(pt.Word)
 	}
 
 	ai := ai.NewSmartyAI(s.SearchSpace, s.WordTree)
 	defer ai.Kill()
 	var play core.ScoredMove
-	ai.FindMove(b, core.NewConsumableRack(jsTilesToTiles(moves.Rack)), func(turn core.Turn) bool {
+	ai.FindMove(b, bag, core.NewConsumableRack(jsTilesToTiles(moves.Rack)), func(turn core.Turn) bool {
 		if sm, ok := turn.(core.ScoredMove); ok {
 			play = sm
 		}

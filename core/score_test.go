@@ -154,7 +154,7 @@ func TestBridgingWords(t *testing.T) {
 
 	words := b.FindNewWords(PlacedTiles{toTiles("ae"), 10, 7, Horizontal})
 	assert.Len(t, words, 1)
-	if !assert.Equal(t, "rave", tiles2String(words[0].Word)) {
+	if !assert.Equal(t, "rave", Tiles2String(words[0].Word)) {
 		b.Print()
 	}
 }

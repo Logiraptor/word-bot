@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"runtime"
 	"sync"
 
 	"github.com/Logiraptor/word-bot/core"
@@ -29,7 +28,7 @@ func NewSmartyAI(wordList core.WordList, searchSpace WordTree) *SmartyAI {
 		jobs:        jobs,
 	}
 
-	for i := 0; i < runtime.NumCPU(); i++ {
+	for i := 0; i < 1; i++ {
 		go searchWorker(s, jobs)
 	}
 
@@ -46,7 +45,7 @@ type job struct {
 	wg         *sync.WaitGroup
 }
 
-func (s *SmartyAI) FindMove(b *core.Board, rack core.Rack, callback func(core.Turn) bool) {
+func (s *SmartyAI) FindMove(b *core.Board, bag core.Bag, rack core.Rack, callback func(core.Turn) bool) {
 	var bestMove core.ScoredMove
 	s.GenerateMoves(b, rack, func(turn core.Turn) bool {
 		switch x := turn.(type) {

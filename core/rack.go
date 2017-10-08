@@ -41,16 +41,16 @@ outer:
 				continue outer
 			}
 		}
-		fmt.Printf("Cannot play tile '%s' with rack: %s, full rack is: %s\n", t.String(), tiles2String(newTiles), tiles2String(c.Rack))
+		fmt.Printf("Cannot play tile '%s' with rack: %s, full rack is: %s, trying to play: %s\n", t.String(), Tiles2String(newTiles), Tiles2String(c.Rack), Tiles2String(tiles))
 		return Rack{}, false
 	}
 
 	return NewConsumableRack(newTiles), true
 }
 
-func tilesEqual(a, b Tile) bool {
-	if a.IsBlank() && b.IsBlank() {
-		return true
+func tilesEqual(a, played Tile) bool {
+	if played.IsBlank() {
+		return a.IsBlank()
 	}
-	return a.ToLetter() == b.ToLetter()
+	return !a.IsBlank() && (a.ToLetter() == played.ToLetter())
 }

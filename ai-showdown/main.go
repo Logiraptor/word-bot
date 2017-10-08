@@ -3,9 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"math/rand"
 	"os/exec"
 	"time"
+
+	"github.com/Logiraptor/word-bot/smarter"
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
@@ -34,12 +37,13 @@ func init() {
 
 	if bytes.Contains(status, []byte("Changes not staged for commit")) ||
 		bytes.Contains(status, []byte("Changes to be committed")) {
-		panic("There are uncommitted changes, please commit or discard to keep the logs accurate!")
-	}
-
-	commitHash, err = exec.Command("git", "rev-parse", "--short", "HEAD").Output()
-	if err != nil {
-		panic(err)
+		log.Print("There are uncommitted changes, please commit or discard to keep the logs accurate!")
+		commitHash = []byte("???")
+	} else {
+		commitHash, err = exec.Command("git", "rev-parse", "--short", "HEAD").Output()
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -52,13 +56,16 @@ func main() {
 		panic(err)
 	}
 
+	smarty := ai.NewSmartyAI(wordDB, wordDB)
+	mcts := smarter.NewMCTSAI(smarty)
+
 	for i := 0; i < 10000; i++ {
 
 		g := playGame(
 			func(b *core.Board) *Player {
-				return NewPlayer(ai.NewSmartyAI(wordDB, wordDB), 1)
+				return NewPlayer(smarty, 1)
 			}, func(b *core.Board) *Player {
-				return NewPlayer(ai.NewSmartyAI(wordDB, wordDB), 2)
+				return NewPlayer(mcts, 2)
 			},
 		)
 
@@ -84,9 +91,9 @@ func NewPlayer(ai ai.AI, n int) *Player {
 	}
 }
 
-func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.ConsumableBag, core.ScoredMove, bool) {
+func (p *Player) takeTurn(board *core.Board, bag core.Bag) (core.Bag, core.ScoredMove, bool) {
 	var turn core.Turn
-	p.ai.FindMove(board, p.rack, func(t core.Turn) bool {
+	p.ai.FindMove(board, bag, p.rack, func(t core.Turn) bool {
 		turn = t
 		return true
 	})
@@ -94,27 +101,33 @@ func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.Consu
 		return bag, core.ScoredMove{}, false
 	}
 
-	move := turn.(core.ScoredMove)
-	if !board.ValidateMove(move.PlacedTiles, wordDB) {
-		fmt.Printf("%s played an invalid move: %v!\n", p.name, move)
+	switch move := turn.(type) {
+	case core.ScoredMove:
+		if !board.ValidateMove(move.PlacedTiles, wordDB) {
+			fmt.Printf("%s played an invalid move: %v!\n", p.name, move)
+			return bag, core.ScoredMove{}, false
+		}
+
+		newRack, ok := p.rack.Play(move.Word)
+		if !ok {
+			return bag, core.ScoredMove{}, false
+		}
+
+		p.rack = newRack
+
+		score := board.Score(move.PlacedTiles)
+		board.PlaceTiles(move.PlacedTiles)
+
+		bag, p.rack.Rack = bag.FillRack(p.rack.Rack, 7-len(p.rack.Rack))
+
+		p.score += score
+
+		return bag, move, true
+	case core.Pass:
 		return bag, core.ScoredMove{}, false
+	default:
+		panic(fmt.Sprintf("%s played unknown turn type: %#v", p.ai.Name(), move))
 	}
-
-	newRack, ok := p.rack.Play(move.Word)
-	if !ok {
-		return bag, core.ScoredMove{}, false
-	}
-
-	p.rack = newRack
-
-	score := board.Score(move.PlacedTiles)
-	board.PlaceTiles(move.PlacedTiles)
-
-	bag, p.rack.Rack = bag.FillRack(p.rack.Rack, 7-len(p.rack.Rack))
-
-	p.score += score
-
-	return bag, move, true
 }
 
 func playGame(a, b func(board *core.Board) *Player) persist.Game {
@@ -156,6 +169,8 @@ func playGame(a, b func(board *core.Board) *Player) persist.Game {
 	fmt.Println("GAME OVER")
 	fmt.Printf("Final Score %s = %d\n", p1.name, p1.score)
 	fmt.Printf("Final Score %s = %d\n", p2.name, p2.score)
+
+	board.Print()
 
 	return game
 }

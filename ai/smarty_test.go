@@ -23,6 +23,7 @@ func BenchmarkSmarty(b *testing.B) {
 	tiles := core.NewConsumableRack(core.MakeTiles(core.MakeWord("bdhrigs"), "xxxxxx "))
 	board := core.NewBoard()
 	smarty := ai.NewSmartyAI(wordDB, wordDB)
+	bag := core.NewConsumableBag()
 	defer smarty.Kill()
 
 	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical})
@@ -30,7 +31,7 @@ func BenchmarkSmarty(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		smarty.FindMove(board, tiles, func(core.Turn) bool { return true })
+		smarty.FindMove(board, bag, tiles, func(core.Turn) bool { return true })
 	}
 }
 

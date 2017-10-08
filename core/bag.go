@@ -12,21 +12,21 @@ const allLetters = "aaaaaaaaabbccddddeeeeeeeeeeeeffggghhiiiiiiiiijkllllmmnnnnnno
 
 var allTiles = MakeTiles(MakeWord(allLetters+"aa"), strings.Repeat("x", len(allLetters))+"  ")
 
-type ConsumableBag struct {
+type Bag struct {
 	tiles    []Tile
 	consumed [2]uint64
 }
 
-func NewConsumableBag() ConsumableBag {
+func NewConsumableBag() Bag {
 	allTilesCopy := make([]Tile, len(allTiles))
 	copy(allTilesCopy, allTiles)
-	return ConsumableBag{
+	return Bag{
 		tiles: allTilesCopy,
 	}
 }
 
 // Shuffle randomizes the order of tiles inside the bag
-func (c ConsumableBag) Shuffle() ConsumableBag {
+func (c Bag) Shuffle() Bag {
 	result := c
 	result.tiles = make([]Tile, len(allTiles))
 	copy(result.tiles, allTiles)
@@ -50,7 +50,7 @@ func (c ConsumableBag) Shuffle() ConsumableBag {
 }
 
 // Consume uses up a tile in the rack
-func (c ConsumableBag) Consume(i int) ConsumableBag {
+func (c Bag) Consume(i int) Bag {
 	result := c
 	subField := i / 64
 	rem := i % 64
@@ -59,13 +59,13 @@ func (c ConsumableBag) Consume(i int) ConsumableBag {
 }
 
 // CanConsume returns true if the ith tile is available to use
-func (c ConsumableBag) CanConsume(i int) bool {
+func (c Bag) CanConsume(i int) bool {
 	subField := i / 64
 	rem := i % 64
 	return c.consumed[subField]&(1<<uint(rem)) == 0
 }
 
-func (c ConsumableBag) FillRack(tiles []Tile, n int) (ConsumableBag, []Tile) {
+func (c Bag) FillRack(tiles []Tile, n int) (Bag, []Tile) {
 	i := 0
 	for x := 0; x < len(c.tiles) && i < n; x++ {
 		if c.CanConsume(x) {
@@ -77,7 +77,20 @@ func (c ConsumableBag) FillRack(tiles []Tile, n int) (ConsumableBag, []Tile) {
 	return c, tiles
 }
 
-func (c ConsumableBag) Count() int {
+func (c Bag) ConsumeTiles(tiles []Tile) Bag {
+outer:
+	for _, t := range tiles {
+		for i, x := range c.tiles {
+			if tilesEqual(x, t) && c.CanConsume(i) {
+				c = c.Consume(i)
+				continue outer
+			}
+		}
+	}
+	return c
+}
+
+func (c Bag) Count() int {
 	consumed := bits.OnesCount64(c.consumed[0]) + bits.OnesCount64(c.consumed[1])
 	return len(allTiles) - consumed
 }

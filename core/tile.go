@@ -1,5 +1,7 @@
 package core
 
+import "unicode"
+
 // Tile represents an actual physical tile on the board
 type Tile int
 
@@ -9,7 +11,7 @@ func (t Tile) ToRune() rune {
 
 func (t Tile) String() string {
 	if t.IsBlank() {
-		return "_"
+		return string(unicode.ToUpper(t.ToRune()))
 	}
 	return string(t.ToRune())
 }
@@ -59,10 +61,10 @@ func Rune2Letter(r rune) Letter {
 	return Letter(r - 'a')
 }
 
-func tiles2String(tiles []Tile) string {
+func Tiles2String(tiles []Tile) string {
 	word := ""
 	for _, l := range tiles {
-		word += string(l.ToRune())
+		word += l.String()
 	}
 	return word
 }

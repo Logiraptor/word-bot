@@ -72,7 +72,7 @@ type PlacedTiles struct {
 }
 
 func (p PlacedTiles) String() string {
-	word := tiles2String(p.Word)
+	word := Tiles2String(p.Word)
 	return fmt.Sprintf("(%d,%d,%v: %s)", p.Row, p.Col, p.Direction, word)
 }
 
@@ -112,6 +112,16 @@ func NewBoard() *Board {
 		}
 	}
 	return b
+}
+
+func (b *Board) Clone() *Board {
+	output := new(Board)
+	for i, row := range b.Cells {
+		for j := range row {
+			output.Cells[i][j] = b.Cells[i][j]
+		}
+	}
+	return output
 }
 
 // Save encodes a representation of the board to the given file
