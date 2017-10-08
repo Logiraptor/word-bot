@@ -90,6 +90,9 @@ func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.Consu
 		turn = t
 		return true
 	})
+	if turn == nil {
+		return bag, core.ScoredMove{}, false
+	}
 
 	move := turn.(core.ScoredMove)
 	if !board.ValidateMove(move.PlacedTiles, wordDB) {
