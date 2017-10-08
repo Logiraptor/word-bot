@@ -120,8 +120,15 @@ func (s Server) GetMove(rw http.ResponseWriter, req *http.Request) {
 		b.PlaceTiles(move.ToPlacedTiles())
 	}
 
-	ai := ai.NewSmartyAI(b, s.SearchSpace, s.WordTree)
-	play := ai.FindMoves(jsTilesToTiles(moves.Rack))[0]
+	ai := ai.NewSmartyAI(s.SearchSpace, s.WordTree)
+	defer ai.Kill()
+	var play core.ScoredMove
+	ai.FindMove(b, core.NewConsumableRack(jsTilesToTiles(moves.Rack)), func(turn core.Turn) bool {
+		if sm, ok := turn.(core.ScoredMove); ok {
+			play = sm
+		}
+		return true
+	})
 
 	dirString := "horizontal"
 	if play.Direction == core.Vertical {

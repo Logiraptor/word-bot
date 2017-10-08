@@ -43,12 +43,6 @@ func init() {
 	}
 }
 
-type AI interface {
-	FindMoves(rack []core.Tile) []core.ScoredMove
-	Name() string
-	Kill()
-}
-
 func main() {
 
 	rand.Seed(time.Now().Unix())
@@ -62,9 +56,9 @@ func main() {
 
 		g := playGame(
 			func(b *core.Board) *Player {
-				return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), 1)
+				return NewPlayer(ai.NewSmartyAI(wordDB, wordDB), 1)
 			}, func(b *core.Board) *Player {
-				return NewPlayer(ai.NewSmartyAI(b, wordDB, wordDB), 2)
+				return NewPlayer(ai.NewSmartyAI(wordDB, wordDB), 2)
 			},
 		)
 
@@ -76,13 +70,13 @@ func main() {
 }
 
 type Player struct {
-	ai    AI
+	ai    ai.AI
 	name  string
-	rack  core.ConsumableRack
+	rack  core.Rack
 	score core.Score
 }
 
-func NewPlayer(ai AI, n int) *Player {
+func NewPlayer(ai ai.AI, n int) *Player {
 	return &Player{
 		ai:   ai,
 		name: fmt.Sprintf("%s - %d - %s", ai.Name(), n, commitHash),
@@ -91,12 +85,13 @@ func NewPlayer(ai AI, n int) *Player {
 }
 
 func (p *Player) takeTurn(board *core.Board, bag core.ConsumableBag) (core.ConsumableBag, core.ScoredMove, bool) {
-	moves := p.ai.FindMoves(p.rack.Rack)
-	if len(moves) == 0 {
-		return bag, core.ScoredMove{}, false
-	}
+	var turn core.Turn
+	p.ai.FindMove(board, p.rack, func(t core.Turn) bool {
+		turn = t
+		return true
+	})
 
-	move := moves[0]
+	move := turn.(core.ScoredMove)
 	if !board.ValidateMove(move.PlacedTiles, wordDB) {
 		fmt.Printf("%s played an invalid move: %v!\n", p.name, move)
 		return bag, core.ScoredMove{}, false
@@ -150,9 +145,6 @@ func playGame(a, b func(board *core.Board) *Player) persist.Game {
 			game.AddMove(p2.name, move)
 		}
 	}
-
-	p1.ai.Kill()
-	p2.ai.Kill()
 
 	if swapped {
 		p1, p2 = p2, p1

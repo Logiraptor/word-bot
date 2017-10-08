@@ -20,30 +20,32 @@ func init() {
 }
 
 func BenchmarkSmarty(b *testing.B) {
-	tiles := core.MakeTiles(core.MakeWord("bdhrigs"), "xxxxxx ")
+	tiles := core.NewConsumableRack(core.MakeTiles(core.MakeWord("bdhrigs"), "xxxxxx "))
 	board := core.NewBoard()
-	smarty := ai.NewSmartyAI(board, wordDB, wordDB)
+	smarty := ai.NewSmartyAI(wordDB, wordDB)
+	defer smarty.Kill()
 
-	board.PlaceTiles(core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical)
-	board.PlaceTiles(core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal)
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical})
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		smarty.FindMoves(tiles)
+		smarty.FindMove(board, tiles, func(core.Turn) bool { return true })
 	}
 }
 
 func BenchmarkSearch(b *testing.B) {
 	rack := core.NewConsumableRack(core.MakeTiles(core.MakeWord("bdhrigs"), "xxxxxx "))
 	board := core.NewBoard()
-	smarty := ai.NewSmartyAI(board, wordDB, wordDB)
+	smarty := ai.NewSmartyAI(wordDB, wordDB)
+	defer smarty.Kill()
 
-	board.PlaceTiles(core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical)
-	board.PlaceTiles(core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal)
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical})
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal})
 	prev := []core.Tile{}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		smarty.Search(8, 8, core.Horizontal, rack, wordDB, prev, func([]core.Tile) {})
+		smarty.Search(board, 8, 8, core.Horizontal, rack, wordDB, prev, func([]core.Tile) {})
 	}
 }
