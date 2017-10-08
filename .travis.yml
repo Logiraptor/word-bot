@@ -8,6 +8,7 @@ before_deploy:
   - govendor init
   - govendor add +external
   - govendor add +local
+  - govendor remove github.com/gopherjs/...
   - pushd frontend/
   - yarn
   - yarn build
