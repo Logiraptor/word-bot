@@ -161,6 +161,37 @@ func (s Server) RenderBoard(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var output = Render(moves)
+
+	json.NewEncoder(rw).Encode(output)
+}
+
+func (s Server) SaveGame(rw http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+		}
+	}()
+	var moves MoveRequest
+	err := json.NewDecoder(req.Body).Decode(&moves)
+	if err != nil {
+		http.Error(rw, "JSON parsing failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	placedWords := make([]core.PlacedTiles, 0, len(moves.Moves))
+	for _, m := range moves.Moves {
+		placedWords = append(placedWords, m.ToPlacedTiles())
+	}
+
+	err = s.DB.Save(placedWords)
+	if err != nil {
+		http.Error(rw, "Saving failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func Render(moves MoveRequest) RenderedBoard {
 	var output RenderedBoard
 	output.Scores = make([]core.Score, len(moves.Moves))
 	b := core.NewBoard()
@@ -189,31 +220,5 @@ func (s Server) RenderBoard(rw http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}
-
-	json.NewEncoder(rw).Encode(output)
-}
-
-func (s Server) SaveGame(rw http.ResponseWriter, req *http.Request) {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-	var moves MoveRequest
-	err := json.NewDecoder(req.Body).Decode(&moves)
-	if err != nil {
-		http.Error(rw, "JSON parsing failed: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	placedWords := make([]core.PlacedTiles, 0, len(moves.Moves))
-	for _, m := range moves.Moves {
-		placedWords = append(placedWords, m.ToPlacedTiles())
-	}
-
-	err = s.DB.Save(placedWords)
-	if err != nil {
-		http.Error(rw, "Saving failed: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
+	return output
 }

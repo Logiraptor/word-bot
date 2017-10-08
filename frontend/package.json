@@ -21,6 +21,7 @@
         "@webpack-blocks/sass": "^0.4.1",
         "awesome-typescript-loader": "^3.2.3",
         "extract-text-webpack-plugin": "^3.0.0",
+        "gopherjs-loader": "^0.0.1",
         "sass-loader": "^6.0.6",
         "ts-node": "^3.3.0"
     }

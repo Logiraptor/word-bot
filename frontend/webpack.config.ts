@@ -1,6 +1,6 @@
-import * as webpack from "webpack";
-import * as HtmlWebpackPlugin from "html-webpack-plugin";
 import * as ExtractTextPlugin from "extract-text-webpack-plugin";
+import * as HtmlWebpackPlugin from "html-webpack-plugin";
+import * as webpack from "webpack";
 
 let __dirname: string;
 
@@ -11,13 +11,17 @@ const config: webpack.Configuration = {
         filename: "app.bundle.js",
     },
     resolve: {
-        extensions: [ ".scss", ".ts", ".tsx", ".js" ],
+        extensions: [ ".scss", ".ts", ".tsx", ".js", ".go" ],
     },
     module: {
         rules: [
             {
                 test: /\.tsx?$/,
                 use: "awesome-typescript-loader",
+            },
+            {
+                test: /\.go$/,
+                use: "gopherjs-loader",
             },
             {
                 test: /\.scss$/,
