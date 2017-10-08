@@ -46,8 +46,8 @@ func TestConsumableBagFillRack(t *testing.T) {
 func TestConsumableBagShuffling(t *testing.T) {
 	err := quick.Check(func(i byte) bool {
 		idx := int(i) % len(allTiles)
-		if idx <= 0 {
-			idx = 1
+		if idx <= 10 {
+			idx = 10
 		}
 		originalBag := NewConsumableBag()
 		shuffledBag := originalBag.Shuffle()
