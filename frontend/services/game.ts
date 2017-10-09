@@ -15,6 +15,13 @@ export class GameService {
             body: JSON.stringify(req),
         }).then((x) => x.json());
     }
+
+    async validate(req: MoveRequest): Promise<boolean[]> {
+        return await fetch("/validate", {
+            method: "POST",
+            body: JSON.stringify(req),
+        }).then((x) => x.json());
+    }
 }
 
 export class StorageService {

@@ -174,3 +174,23 @@ body {
         text-align: right;
     }
 }
+
+.error-icon::before {
+    position: absolute;
+    display: block;
+    width: 1em;
+    height: 1em;
+    background-color: #de0d0d;
+    color: white;
+    content: "!";
+    text-align: center;
+    border-radius: 0.5em;
+    top: 0.5em;
+    left: 0.25em;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+.move-panel-move {
+    position: relative;
+}

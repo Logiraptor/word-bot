@@ -1,8 +1,9 @@
-import { Move, Tile, Board } from "../models/core";
 import * as React from "react";
-import { RackInput } from "./RackInput";
-import { BoardView } from "./BoardView";
+
+import { Board, Move, Tile } from "../models/core";
 import { GameService, StorageService } from "../services/game";
+import { BoardView } from "./BoardView";
+import { RackInput } from "./RackInput";
 
 export interface State {
     moves: Move[];
@@ -55,6 +56,7 @@ export class App extends React.Component<{ gameService: GameService; storage: St
                         changeMoves={(moves) => {
                             this.setState({ moves });
                         }}
+                        service={this.props.gameService}
                     />
                     <ScoreBoard moves={this.state.moves} scores={this.state.scores} />
                     <div className="player-rack">
@@ -126,8 +128,36 @@ class ScoreBoard extends React.Component<{ moves: Move[]; scores: number[] }> {
         );
     }
 }
+interface MovePanelProps {
+    moves: Move[];
+    scores: number[];
+    changeMoves: (m: Move[]) => void;
+    service: GameService;
+}
 
-class MovePanel extends React.Component<{ moves: Move[]; scores: number[]; changeMoves: (m: Move[]) => void }> {
+class MovePanel extends React.Component<MovePanelProps, { valid: boolean[] }> {
+    state = {
+        valid: [],
+    };
+
+    componentDidMount() {
+        this.revalidate();
+    }
+
+    componentDidUpdate(prevProps: MovePanelProps) {
+        if (this.props.moves != prevProps.moves) {
+            this.revalidate();
+        }
+    }
+
+    async revalidate() {
+        let valid = await this.props.service.validate({
+            moves: this.props.moves,
+            rack: [],
+        });
+        this.setState({ valid });
+    }
+
     renderMove = (move: Move, i: number) => {
         const changeMove = (f: (move: Move) => void) => {
             let moves = [ ...this.props.moves ];
@@ -137,7 +167,7 @@ class MovePanel extends React.Component<{ moves: Move[]; scores: number[]; chang
         };
 
         return (
-            <div key={i}>
+            <div className={!this.state.valid[i] ? "move-panel-move error-icon" : "move-panel-move"} key={i}>
                 <RackInput
                     score={this.props.scores[i]}
                     mini

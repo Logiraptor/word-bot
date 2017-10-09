@@ -27,6 +27,7 @@ func main() {
 		WordTree:    wordDB,
 	}
 	http.HandleFunc("/play", s.GetMove)
+	http.HandleFunc("/validate", s.ValidateEndpoint)
 	http.HandleFunc("/render", s.RenderBoard)
 	http.HandleFunc("/save", s.SaveGame)
 	http.Handle("/", http.FileServer(http.Dir("frontend/public")))

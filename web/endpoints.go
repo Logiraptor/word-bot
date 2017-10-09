@@ -222,3 +222,31 @@ func Render(moves MoveRequest) RenderedBoard {
 	}
 	return output
 }
+
+func (s Server) ValidateEndpoint(rw http.ResponseWriter, req *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println(r)
+		}
+	}()
+	var moves MoveRequest
+	err := json.NewDecoder(req.Body).Decode(&moves)
+	if err != nil {
+		http.Error(rw, "JSON parsing failed: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var output = s.Validate(moves)
+
+	json.NewEncoder(rw).Encode(output)
+}
+
+func (s Server) Validate(moves MoveRequest) []bool {
+	output := make([]bool, len(moves.Moves))
+	b := core.NewBoard()
+	for i, m := range moves.Moves {
+		output[i] = b.ValidateMove(m.ToPlacedTiles(), s.SearchSpace)
+		b.PlaceTiles(m.ToPlacedTiles())
+	}
+	return output
+}
