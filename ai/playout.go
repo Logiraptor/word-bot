@@ -1,8 +1,6 @@
 package ai
 
 import (
-	"fmt"
-
 	"github.com/Logiraptor/word-bot/core"
 )
 
@@ -25,44 +23,41 @@ func (p *Playout) Evaluate(b *core.Board, bag core.Bag, rack core.Rack) float64 
 	bag, opponentRack.Rack = bag.FillRack(opponentRack.Rack, 7)
 
 	var (
-		p1Skip, p2Skip   bool
+		p1Ok, p2Ok       bool = true, true
 		p1Score, p2Score core.Score
+		pt               core.ScoredMove
 	)
 
-	for (bag.Count() > 0 || len(opponentRack.Rack) > 0 || len(rack.Rack) > 0) || (p1Skip && p2Skip) {
+	for (bag.Count() > 0 || len(opponentRack.Rack) > 0 || len(rack.Rack) > 0) && (p1Ok || p2Ok) {
+		p1Ok, p2Ok = false, false
 		var move core.Turn
 		p.ai.FindMove(b, bag, opponentRack, func(turn core.Turn) bool {
 			move = turn
 			return true
 		})
 
-		if pt, ok := move.(core.ScoredMove); ok {
-			p2Skip = false
-			if opponentRack, ok = opponentRack.Play(pt.Word); ok {
-				fmt.Println("Play", pt.PlacedTiles)
+		pt, p2Ok = move.(core.ScoredMove)
+		if p2Ok {
+			if opponentRack, p2Ok = opponentRack.Play(pt.Word); p2Ok {
 				b.PlaceTiles(pt.PlacedTiles)
 				bag, opponentRack.Rack = bag.FillRack(opponentRack.Rack, 7-len(opponentRack.Rack))
 				p2Score += pt.Score
 			}
-		} else {
-			p2Skip = true
 		}
 
+		move = nil
 		p.ai.FindMove(b, bag, rack, func(turn core.Turn) bool {
 			move = turn
 			return true
 		})
 
-		if pt, ok := move.(core.ScoredMove); ok {
-			p1Skip = false
-			if rack, ok = rack.Play(pt.Word); ok {
-				fmt.Println("Counter", pt.PlacedTiles)
+		pt, p1Ok = move.(core.ScoredMove)
+		if p1Ok {
+			if rack, p1Ok = rack.Play(pt.Word); p1Ok {
 				b.PlaceTiles(pt.PlacedTiles)
 				bag, rack.Rack = bag.FillRack(rack.Rack, 7-len(rack.Rack))
 				p1Score += pt.Score
 			}
-		} else {
-			p1Skip = true
 		}
 	}
 

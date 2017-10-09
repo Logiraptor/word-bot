@@ -6,7 +6,6 @@ import (
 	"log"
 	"math/rand"
 	"os/exec"
-	"time"
 
 	"github.com/Logiraptor/word-bot/smarter"
 
@@ -49,7 +48,7 @@ func init() {
 
 func main() {
 
-	rand.Seed(time.Now().Unix())
+	// rand.Seed(time.Now().Unix())
 
 	db, err := persist.NewDB("results.db")
 	if err != nil {

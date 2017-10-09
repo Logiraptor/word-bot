@@ -113,11 +113,14 @@ func searchWorker(s *SmartyAI, jobs <-chan job) {
 				Direction: job.dir,
 			}
 			if job.board.ValidateMove(result, s.wordList) {
-				newWord := make([]core.Tile, len(result.Word))
-				copy(newWord, result.Word)
-				result.Word = newWord
+				_, canPlay := job.rack.Play(word)
+				if canPlay {
+					newWord := make([]core.Tile, len(result.Word))
+					copy(newWord, result.Word)
+					result.Word = newWord
 
-				job.resultChan <- result
+					job.resultChan <- result
+				}
 			}
 		})
 		job.wg.Done()

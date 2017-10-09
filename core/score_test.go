@@ -28,6 +28,8 @@ func (fakeWordList) Contains(word Word) bool {
 		"en",
 		"stone",
 		"stones",
+		"tabarded",
+		"to",
 	}
 
 	for _, x := range words {

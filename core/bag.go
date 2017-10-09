@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"math/bits"
 	"math/rand"
 	"strings"
@@ -27,31 +28,42 @@ func NewConsumableBag() Bag {
 }
 
 func (c Bag) validate() {
-	if (c.consumed[1] & (1 << (uint(len(allTiles)) - 64))) != 0 {
+	if c.getBit(len(allTiles) + 1) {
 		panic("Invalid bag")
 	}
 }
 
 // Shuffle randomizes the order of tiles inside the bag
 func (c Bag) Shuffle() Bag {
-	c.validate()
 	result := c
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("%b -> %b\n", c.consumed[0], result.consumed[0])
+			fmt.Printf("%b -> %b\n", c.consumed[1], result.consumed[1])
+			panic(r)
+		}
+	}()
+	c.validate()
 	result.tiles = make([]Tile, len(allTiles))
 	copy(result.tiles, allTiles)
 	for i := len(result.tiles) - 1; i > 0; i-- {
 		j := rand.Intn(i)
 		result.tiles[i], result.tiles[j] = result.tiles[j], result.tiles[i]
 
-		subFieldI := i / 64
-		remI := i % 64
-		bitI := (result.consumed[subFieldI] & (1 << uint(remI))) >> uint(remI)
+		bitI := result.getBit(i)
+		bitJ := result.getBit(j)
 
-		subFieldJ := j / 64
-		remJ := j % 64
-		bitJ := (result.consumed[subFieldJ] & (1 << uint(remJ))) >> uint(remJ)
+		if bitI {
+			result.setBit(j)
+		} else {
+			result.clearBit(j)
+		}
 
-		result.consumed[subFieldI] ^= (-bitJ ^ result.consumed[subFieldI]) & (1 << uint(remJ))
-		result.consumed[subFieldJ] ^= (-bitI ^ result.consumed[subFieldJ]) & (1 << uint(remI))
+		if bitJ {
+			result.setBit(i)
+		} else {
+			result.clearBit(i)
+		}
 	}
 	result.validate()
 	return result
@@ -61,9 +73,7 @@ func (c Bag) Shuffle() Bag {
 func (c Bag) Consume(i int) Bag {
 	c.validate()
 	result := c
-	subField := i / 64
-	rem := i % 64
-	result.consumed[subField] |= (1 << uint(rem))
+	result.setBit(i)
 	result.validate()
 	return result
 }
@@ -71,9 +81,7 @@ func (c Bag) Consume(i int) Bag {
 // CanConsume returns true if the ith tile is available to use
 func (c Bag) CanConsume(i int) bool {
 	c.validate()
-	subField := i / 64
-	rem := i % 64
-	return c.consumed[subField]&(1<<uint(rem)) == 0
+	return !c.getBit(i)
 }
 
 func (c Bag) FillRack(tiles []Tile, n int) (Bag, []Tile) {
@@ -108,4 +116,22 @@ func (c Bag) Count() int {
 	c.validate()
 	consumed := bits.OnesCount64(c.consumed[0]) + bits.OnesCount64(c.consumed[1])
 	return len(allTiles) - consumed
+}
+
+func (c *Bag) setBit(i int) {
+	subField := i / 64
+	rem := i % 64
+	c.consumed[subField] |= (1 << uint(rem))
+}
+
+func (c *Bag) clearBit(i int) {
+	subField := i / 64
+	rem := i % 64
+	c.consumed[subField] &= 0xffffffffffffffff ^ (1 << uint(rem))
+}
+
+func (c Bag) getBit(i int) bool {
+	subField := i / 64
+	rem := i % 64
+	return c.consumed[subField]&(1<<uint(rem)) != 0
 }

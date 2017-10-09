@@ -6,8 +6,7 @@ import (
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
-
-	"github.com/glemzurg/go-mcts"
+	mcts "github.com/glemzurg/go-mcts"
 )
 
 type GameState struct {
@@ -168,11 +167,8 @@ func (m *MCTSAI) Name() string {
 func (m *MCTSAI) Score(playerId uint64, s mcts.GameState) float64 {
 	// Simulate with smarty playout and return difference in score
 	gs := s.(*GameState)
-	fmt.Println("Evaluating...")
-	score := m.eval.Evaluate(gs.board, gs.bag, gs.rack)
-	fmt.Println("Evaluated to", score)
 	if gs.opponentTurn {
-		return -score
+		return -m.eval.Evaluate(gs.board, gs.bag, gs.opponentRack)
 	}
-	return score
+	return m.eval.Evaluate(gs.board, gs.bag, gs.rack)
 }
