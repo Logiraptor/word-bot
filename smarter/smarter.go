@@ -13,6 +13,7 @@ import (
 type GameState struct {
 	opponentTurn bool
 	moveGen      ai.MoveGenerator
+	eval         ai.BoardEvaluator
 	lastPlay     core.ScoredMove
 	board        *core.Board
 	rack         core.Rack
@@ -69,6 +70,7 @@ func (g *GameState) Clone() mcts.GameState {
 	return &GameState{
 		opponentTurn: g.opponentTurn,
 		moveGen:      g.moveGen,
+		eval:         g.eval,
 		board:        g.board.Clone(),
 		rack:         g.rack,
 		opponentRack: g.opponentRack,
@@ -131,11 +133,13 @@ func (m Move) Probability() float64 {
 
 type MCTSAI struct {
 	moveGen ai.MoveGenerator
+	eval    ai.BoardEvaluator
 }
 
-func NewMCTSAI(moveGen ai.MoveGenerator) *MCTSAI {
+func NewMCTSAI(moveGen ai.MoveGenerator, eval ai.BoardEvaluator) *MCTSAI {
 	return &MCTSAI{
 		moveGen: moveGen,
+		eval:    eval,
 	}
 }
 
@@ -152,7 +156,7 @@ func (m *MCTSAI) FindMove(board *core.Board, bag core.Bag, rack core.Rack, callb
 		moveGen:      m.moveGen,
 		opponentRack: r,
 		bag:          bag,
-	}, 200, 10, 10, 0, m.Score)
+	}, 100, 10, 10, 0, m.Score)
 	callback(move.(Move).Turn)
 }
 
@@ -164,7 +168,9 @@ func (m *MCTSAI) Name() string {
 func (m *MCTSAI) Score(playerId uint64, s mcts.GameState) float64 {
 	// Simulate with smarty playout and return difference in score
 	gs := s.(*GameState)
-	score := float64(gs.lastPlay.Score)
+	fmt.Println("Evaluating...")
+	score := m.eval.Evaluate(gs.board, gs.bag, gs.rack)
+	fmt.Println("Evaluated to", score)
 	if gs.opponentTurn {
 		return -score
 	}

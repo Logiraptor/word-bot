@@ -57,7 +57,7 @@ func main() {
 	}
 
 	smarty := ai.NewSmartyAI(wordDB, wordDB)
-	mcts := smarter.NewMCTSAI(smarty)
+	mcts := smarter.NewMCTSAI(smarty, ai.NewPlayout(smarty))
 
 	for i := 0; i < 10000; i++ {
 
@@ -160,6 +160,8 @@ func playGame(a, b func(board *core.Board) *Player) persist.Game {
 		if bag, move, p2Ok = p2.takeTurn(board, bag); p2Ok {
 			game.AddMove(p2.name, move)
 		}
+
+		fmt.Println(bag.Count(), "Tiles left:", p1.name, p1.score, "to", p2.name, p2.score)
 	}
 
 	if swapped {

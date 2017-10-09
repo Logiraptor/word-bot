@@ -18,7 +18,7 @@ type MoveGenerator interface {
 
 // A BoardEvaluator determines a heuristic score for a board position
 type BoardEvaluator interface {
-	Evaluate(b *core.Board, rack core.Rack) float64
+	Evaluate(b *core.Board, bag core.Bag, rack core.Rack) float64
 }
 
 // A WordTree enables efficient, progressive building of turns

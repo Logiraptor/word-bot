@@ -20,13 +20,21 @@ type Bag struct {
 func NewConsumableBag() Bag {
 	allTilesCopy := make([]Tile, len(allTiles))
 	copy(allTilesCopy, allTiles)
-	return Bag{
+	b := Bag{
 		tiles: allTilesCopy,
+	}
+	return b
+}
+
+func (c Bag) validate() {
+	if (c.consumed[1] & (1 << (uint(len(allTiles)) - 64))) != 0 {
+		panic("Invalid bag")
 	}
 }
 
 // Shuffle randomizes the order of tiles inside the bag
 func (c Bag) Shuffle() Bag {
+	c.validate()
 	result := c
 	result.tiles = make([]Tile, len(allTiles))
 	copy(result.tiles, allTiles)
@@ -36,36 +44,40 @@ func (c Bag) Shuffle() Bag {
 
 		subFieldI := i / 64
 		remI := i % 64
-		bitI := result.consumed[subFieldI] & (1 << uint(remI))
+		bitI := (result.consumed[subFieldI] & (1 << uint(remI))) >> uint(remI)
 
 		subFieldJ := j / 64
 		remJ := j % 64
-		bitJ := result.consumed[subFieldJ] & (1 << uint(remJ))
+		bitJ := (result.consumed[subFieldJ] & (1 << uint(remJ))) >> uint(remJ)
 
-		result.consumed[subFieldI] |= (bitJ << uint(remI))
-		result.consumed[subFieldJ] |= (bitI << uint(remJ))
+		result.consumed[subFieldI] ^= (-bitJ ^ result.consumed[subFieldI]) & (1 << uint(remJ))
+		result.consumed[subFieldJ] ^= (-bitI ^ result.consumed[subFieldJ]) & (1 << uint(remI))
 	}
-
+	result.validate()
 	return result
 }
 
 // Consume uses up a tile in the rack
 func (c Bag) Consume(i int) Bag {
+	c.validate()
 	result := c
 	subField := i / 64
 	rem := i % 64
 	result.consumed[subField] |= (1 << uint(rem))
+	result.validate()
 	return result
 }
 
 // CanConsume returns true if the ith tile is available to use
 func (c Bag) CanConsume(i int) bool {
+	c.validate()
 	subField := i / 64
 	rem := i % 64
 	return c.consumed[subField]&(1<<uint(rem)) == 0
 }
 
 func (c Bag) FillRack(tiles []Tile, n int) (Bag, []Tile) {
+	c.validate()
 	i := 0
 	for x := 0; x < len(c.tiles) && i < n; x++ {
 		if c.CanConsume(x) {
@@ -74,23 +86,26 @@ func (c Bag) FillRack(tiles []Tile, n int) (Bag, []Tile) {
 			i++
 		}
 	}
+	c.validate()
 	return c, tiles
 }
 
 func (c Bag) ConsumeTiles(tiles []Tile) Bag {
-outer:
+	c.validate()
 	for _, t := range tiles {
 		for i, x := range c.tiles {
 			if tilesEqual(x, t) && c.CanConsume(i) {
 				c = c.Consume(i)
-				continue outer
+				break
 			}
 		}
 	}
+	c.validate()
 	return c
 }
 
 func (c Bag) Count() int {
+	c.validate()
 	consumed := bits.OnesCount64(c.consumed[0]) + bits.OnesCount64(c.consumed[1])
 	return len(allTiles) - consumed
 }
