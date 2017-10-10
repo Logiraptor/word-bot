@@ -119,9 +119,10 @@ func (db *DB) PrintStats() {
 			INNER JOIN game_player_scores AS p1 ON p1.game_id = games.id
 			INNER JOIN game_player_scores AS p2 ON p2.game_id = games.id AND p1.player < p2.player)
 
-	SELECT p1, p2, SUM(win), COUNT(win), 100 * (CAST(SUM(win) AS float) / CAST(COUNT(win) AS float))
+	SELECT REPLACE(p1, X'0A', ''), REPLACE(p2, X'0A', ''), SUM(win), COUNT(win), 100 * (CAST(SUM(win) AS float) / CAST(COUNT(win) AS float)) as winrate
 	FROM matchups
 	GROUP BY p1, p2
+	ORDER BY winrate
 
 	`
 
