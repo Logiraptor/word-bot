@@ -112,6 +112,18 @@ func (c Bag) ConsumeTiles(tiles []Tile) Bag {
 	return c
 }
 
+func (c Bag) Replace(tiles []Tile) Bag {
+	for _, t := range tiles {
+		for i, x := range c.tiles {
+			if tilesEqual(x, t) && !c.CanConsume(i) {
+				c.clearBit(i)
+				break
+			}
+		}
+	}
+	return c
+}
+
 func (c Bag) Count() int {
 	c.validate()
 	consumed := bits.OnesCount64(c.consumed[0]) + bits.OnesCount64(c.consumed[1])

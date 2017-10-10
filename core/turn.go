@@ -49,6 +49,12 @@ func (p Pass) MarshalJSON() ([]byte, error) {
 	}{Type: "pass"})
 }
 
+type Exchange struct{}
+
+var _ Turn = Exchange{}
+
+func (Exchange) isTurn() {}
+
 type ChallengeWord struct {
 	Move PlacedTiles
 }

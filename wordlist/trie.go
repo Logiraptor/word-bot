@@ -88,14 +88,4 @@ func (t *TrieBuilder) AddWord(word string) {
 
 func (t *TrieBuilder) Build() *Trie {
 	return &t.nodes[0]
-	// finalTries := make([]Trie, len(t.nodes))
-	// for i, node := range t.nodes {
-	// 	for j, link := range node.nodes {
-	// 		if link != 0 {
-	// 			finalTries[i].nodes[j] = &finalTries[link]
-	// 		}
-	// 	}
-	// 	finalTries[i].terminal = node.terminal
-	// }
-	// return &finalTries[0]
 }

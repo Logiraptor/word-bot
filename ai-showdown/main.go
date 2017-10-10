@@ -56,21 +56,28 @@ func main() {
 	}
 
 	smarty := ai.NewSmartyAI(wordDB, wordDB)
-	mcts := smarter.NewMCTSAI(smarty, ai.NewPlayout(smarty))
+	playout := ai.NewPlayout(smarty)
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100; i++ {
+		for iter := uint(1); iter < 100; iter *= 2 {
+			for sim := uint(1); sim < 100; sim *= 2 {
+				for bias := 0.01; bias < 10; bias *= 10 {
+					mcts := smarter.NewMCTSAI(smarty, playout, iter, sim, bias)
 
-		g := playGame(
-			func(b *core.Board) *Player {
-				return NewPlayer(smarty, 1)
-			}, func(b *core.Board) *Player {
-				return NewPlayer(mcts, 2)
-			},
-		)
+					g := playGame(
+						func(b *core.Board) *Player {
+							return NewPlayer(smarty, 1)
+						}, func(b *core.Board) *Player {
+							return NewPlayer(mcts, 2)
+						},
+					)
 
-		err := db.SaveGame(g)
-		if err != nil {
-			fmt.Println("ERROR SAVING GAME", err)
+					err := db.SaveGame(g)
+					if err != nil {
+						fmt.Println("ERROR SAVING GAME", err)
+					}
+				}
+			}
 		}
 	}
 }
@@ -123,6 +130,13 @@ func (p *Player) takeTurn(board *core.Board, bag core.Bag) (core.Bag, core.Score
 
 		return bag, move, true
 	case core.Pass:
+		return bag, core.ScoredMove{}, false
+	case core.Exchange:
+		newRack := core.NewConsumableRack(nil)
+		bag, newRack.Rack = bag.FillRack(newRack.Rack, 7-len(newRack.Rack))
+		bag = bag.Replace(p.rack.Rack)
+		p.rack = newRack
+		bag, p.rack.Rack = bag.FillRack(p.rack.Rack, 7-len(p.rack.Rack))
 		return bag, core.ScoredMove{}, false
 	default:
 		panic(fmt.Sprintf("%s played unknown turn type: %#v", p.ai.Name(), move))
