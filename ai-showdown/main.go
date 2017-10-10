@@ -59,9 +59,9 @@ func main() {
 	playout := ai.NewPlayout(smarty)
 
 	for i := 0; i < 100; i++ {
-		for iter := uint(1); iter < 100; iter *= 2 {
-			for sim := uint(1); sim < 100; sim *= 2 {
-				for bias := 0.01; bias < 10; bias *= 10 {
+		for iter := uint(1); iter < 129; iter *= 2 {
+			for sim := uint(1); sim < 129; sim *= 2 {
+				for bias := 0.01; bias < 11; bias *= 10 {
 					mcts := smarter.NewMCTSAI(smarty, playout, iter, sim, bias)
 
 					g := playGame(
