@@ -9,37 +9,37 @@ import (
 	"github.com/Logiraptor/word-bot/wordlist"
 )
 
-var wordDB *wordlist.Trie
+var wordGaddag *wordlist.Gaddag
 
 func init() {
-	wordDB = wordlist.NewTrie()
-	err := definitions.LoadWords("../words.txt", wordDB)
+	wordGaddag = wordlist.NewGaddag()
+	err := definitions.LoadWords("../words.txt", wordGaddag)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func BenchmarkSmarty(b *testing.B) {
+func BenchmarkSpeedy(b *testing.B) {
 	tiles := core.NewConsumableRack(core.MakeTiles(core.MakeWord("bdhrigs"), "xxxxxx "))
 	board := core.NewBoard()
-	smarty := ai.NewSmartyAI(wordDB, wordDB)
+	speedy := ai.NewSpeedyAI(wordDB, wordDB)
 	bag := core.NewConsumableBag()
-	defer smarty.Kill()
+	defer speedy.Kill()
 
 	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical})
 	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		smarty.FindMove(board, bag, tiles, func(core.Turn) bool { return true })
+		speedy.FindMove(board, bag, tiles, func(core.Turn) bool { return true })
 	}
 }
 
-func BenchmarkSearch(b *testing.B) {
+func BenchmarkSpeedySearch(b *testing.B) {
 	rack := core.NewConsumableRack(core.MakeTiles(core.MakeWord("bdhrigs"), "xxxxxx "))
 	board := core.NewBoard()
-	smarty := ai.NewSmartyAI(wordDB, wordDB)
-	defer smarty.Kill()
+	speedy := ai.NewSpeedyAI(wordDB, wordDB)
+	defer speedy.Kill()
 
 	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical})
 	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal})
@@ -47,6 +47,6 @@ func BenchmarkSearch(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		smarty.Search(board, 8, 8, core.Horizontal, rack, wordDB, prev, func([]core.Tile) {})
+		speedy.Search(board, 8, 8, core.Horizontal, rack, wordDB, prev, func([]core.Tile) {})
 	}
 }

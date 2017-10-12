@@ -1,0 +1,13 @@
+
+
+Long running AI DOJO:
+    Run AI matches based on DB queue
+    Prioritize matches with low confidence
+    Ability to add new matches without distrupting / losing more than currenly playing games.
+    Scheduler for PCF integration
+
+
+Faster move generation - "speedy"
+    compare to smarty for benchmarks
+    implement gaddag
+

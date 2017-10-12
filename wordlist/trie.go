@@ -1,7 +1,6 @@
 package wordlist
 
 import (
-	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
 )
 
@@ -9,8 +8,6 @@ type Trie struct {
 	nodes    [26]*Trie
 	terminal bool
 }
-
-var _ ai.WordTree = NewTrie()
 
 func NewTrie() *Trie {
 	return &Trie{}
@@ -31,7 +28,7 @@ func (t *Trie) IsTerminal() bool {
 	return t.terminal
 }
 
-func (t *Trie) CanBranch(tile core.Tile) (ai.WordTree, bool) {
+func (t *Trie) CanBranch(tile core.Tile) (*Trie, bool) {
 	next := t.nodes[tile.ToLetter()]
 	return next, next != nil
 }

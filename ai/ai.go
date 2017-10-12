@@ -20,9 +20,3 @@ type MoveGenerator interface {
 type BoardEvaluator interface {
 	Evaluate(b *core.Board, bag core.Bag, p1, p2 core.Rack) float64
 }
-
-// A WordTree enables efficient, progressive building of turns
-type WordTree interface {
-	IsTerminal() bool
-	CanBranch(t core.Tile) (WordTree, bool)
-}

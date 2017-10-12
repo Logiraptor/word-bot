@@ -3,50 +3,38 @@ package ai
 import (
 	"sync"
 
-	"github.com/Logiraptor/word-bot/core"
 	"github.com/Logiraptor/word-bot/wordlist"
+
+	"github.com/Logiraptor/word-bot/core"
 )
 
-type SmartyAI struct {
+type SpeedyAI struct {
 	wordList    core.WordList
 	jobs        chan<- job
 	searchSpace *wordlist.Trie
 }
 
-var _ AI = &SmartyAI{}
-var _ MoveGenerator = &SmartyAI{}
+var _ AI = &SpeedyAI{}
+var _ MoveGenerator = &SpeedyAI{}
 
-var blankA = core.Rune2Letter('a').ToTile(true)
-var blankZ = core.Rune2Letter('z').ToTile(true)
-
-func NewSmartyAI(wordList core.WordList, searchSpace *wordlist.Trie) *SmartyAI {
+func NewSpeedyAI(wordList core.WordList, searchSpace *wordlist.Trie) *SpeedyAI {
 
 	jobs := make(chan job, 15*15*2)
 
-	s := &SmartyAI{
+	s := &SpeedyAI{
 		wordList:    wordList,
 		searchSpace: searchSpace,
 		jobs:        jobs,
 	}
 
 	for i := 0; i < 1; i++ {
-		go searchWorker(s, jobs)
+		go speedySearchWorker(s, jobs)
 	}
 
 	return s
 }
 
-type job struct {
-	i, j       int
-	board      *core.Board
-	dir        core.Direction
-	rack       core.Rack
-	wordDB     *wordlist.Trie
-	resultChan chan<- core.PlacedTiles
-	wg         *sync.WaitGroup
-}
-
-func (s *SmartyAI) FindMove(b *core.Board, bag core.Bag, rack core.Rack, callback func(core.Turn) bool) {
+func (s *SpeedyAI) FindMove(b *core.Board, bag core.Bag, rack core.Rack, callback func(core.Turn) bool) {
 	var bestMove core.ScoredMove
 	s.GenerateMoves(b, rack, func(turn core.Turn) bool {
 		switch x := turn.(type) {
@@ -60,7 +48,7 @@ func (s *SmartyAI) FindMove(b *core.Board, bag core.Bag, rack core.Rack, callbac
 	})
 }
 
-func (s *SmartyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(core.Turn) bool) {
+func (s *SpeedyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(core.Turn) bool) {
 	var wg = new(sync.WaitGroup)
 
 	dirs := []core.Direction{core.Horizontal, core.Vertical}
@@ -99,7 +87,7 @@ func (s *SmartyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 	}
 }
 
-func searchWorker(s *SmartyAI, jobs <-chan job) {
+func speedySearchWorker(s *SpeedyAI, jobs <-chan job) {
 	var tiles = make([]core.Tile, 0, 15)
 	for job := range jobs {
 		s.Search(job.board, job.i, job.j, job.dir, job.rack, job.wordDB, tiles, func(word []core.Tile) {
@@ -128,15 +116,15 @@ func searchWorker(s *SmartyAI, jobs <-chan job) {
 	}
 }
 
-func (s *SmartyAI) Kill() {
+func (s *SpeedyAI) Kill() {
 	close(s.jobs)
 }
 
-func (s *SmartyAI) Name() string {
-	return "Smarty"
+func (s *SpeedyAI) Name() string {
+	return "Speedy"
 }
 
-func (s *SmartyAI) Search(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
 	dRow, dCol := dir.Offsets()
 	if wordDB.IsTerminal() {
 		callback(prev)
@@ -170,7 +158,7 @@ func (s *SmartyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 	}
 }
 
-func (s *SmartyAI) stepForward(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SpeedyAI) stepForward(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
 	// back up perpendicular to advancing direction until I hit a blank
 	var (
 		ok                 bool

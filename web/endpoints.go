@@ -8,6 +8,7 @@ import (
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
+	"github.com/Logiraptor/word-bot/wordlist"
 )
 
 type DB interface {
@@ -15,7 +16,7 @@ type DB interface {
 }
 
 type Server struct {
-	WordTree    ai.WordTree
+	WordTree    *wordlist.Trie
 	SearchSpace core.WordList
 	DB          DB
 }
