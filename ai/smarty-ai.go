@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"runtime"
 	"sync"
 
 	"github.com/Logiraptor/word-bot/core"
@@ -29,7 +30,7 @@ func NewSmartyAI(wordList core.WordList, searchSpace *wordlist.Trie) *SmartyAI {
 		jobs:        jobs,
 	}
 
-	for i := 0; i < 1; i++ {
+	for i := 0; i < runtime.NumCPU(); i++ {
 		go searchWorker(s, jobs)
 	}
 

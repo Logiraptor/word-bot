@@ -1,6 +1,7 @@
 package ai
 
 import (
+	"runtime"
 	"sync"
 
 	"github.com/Logiraptor/word-bot/wordlist"
@@ -10,16 +11,16 @@ import (
 
 type SpeedyAI struct {
 	wordList    core.WordList
-	jobs        chan<- job
-	searchSpace *wordlist.Trie
+	jobs        chan<- speedyJob
+	searchSpace *wordlist.Gaddag
 }
 
 var _ AI = &SpeedyAI{}
 var _ MoveGenerator = &SpeedyAI{}
 
-func NewSpeedyAI(wordList core.WordList, searchSpace *wordlist.Trie) *SpeedyAI {
+func NewSpeedyAI(wordList core.WordList, searchSpace *wordlist.Gaddag) *SpeedyAI {
 
-	jobs := make(chan job, 15*15*2)
+	jobs := make(chan speedyJob, 15*15*2)
 
 	s := &SpeedyAI{
 		wordList:    wordList,
@@ -27,11 +28,21 @@ func NewSpeedyAI(wordList core.WordList, searchSpace *wordlist.Trie) *SpeedyAI {
 		jobs:        jobs,
 	}
 
-	for i := 0; i < 1; i++ {
+	for i := 0; i < runtime.NumCPU(); i++ {
 		go speedySearchWorker(s, jobs)
 	}
 
 	return s
+}
+
+type speedyJob struct {
+	i, j       int
+	board      *core.Board
+	dir        core.Direction
+	rack       core.Rack
+	wordDB     *wordlist.Gaddag
+	resultChan chan<- core.PlacedTiles
+	wg         *sync.WaitGroup
 }
 
 func (s *SpeedyAI) FindMove(b *core.Board, bag core.Bag, rack core.Rack, callback func(core.Turn) bool) {
@@ -60,7 +71,7 @@ func (s *SpeedyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 			for j := 0; j < 15; j++ {
 				for _, dir := range dirs {
 					wg.Add(1)
-					s.jobs <- job{
+					s.jobs <- speedyJob{
 						board:      b,
 						i:          i,
 						j:          j,
@@ -87,7 +98,7 @@ func (s *SpeedyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 	}
 }
 
-func speedySearchWorker(s *SpeedyAI, jobs <-chan job) {
+func speedySearchWorker(s *SpeedyAI, jobs <-chan speedyJob) {
 	var tiles = make([]core.Tile, 0, 15)
 	for job := range jobs {
 		s.Search(job.board, job.i, job.j, job.dir, job.rack, job.wordDB, tiles, func(word []core.Tile) {
@@ -124,8 +135,11 @@ func (s *SpeedyAI) Name() string {
 	return "Speedy"
 }
 
-func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prev []core.Tile, callback func([]core.Tile)) {
 	dRow, dCol := dir.Offsets()
+	if wordDB.CanReverse() && wordDB.Reverse().IsTerminal() {
+		callback(prev)
+	}
 	if wordDB.IsTerminal() {
 		callback(prev)
 	}
@@ -135,33 +149,44 @@ func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 	}
 	if board.HasTile(i, j) {
 		letter := board.Cells[i][j].Tile
-		if next, ok := wordDB.CanBranch(letter); ok {
-			s.stepForward(board, i+dRow, j+dCol, dir, rack, next, prev, callback)
+		if !wordDB.CanBranch(letter) {
+			return
 		}
-	} else {
-		for i, letter := range rack.Rack {
-			if !rack.CanConsume(i) {
-				continue
-			}
-			if letter.IsBlank() {
-				for r := blankA; r <= blankZ; r++ {
-					if next, ok := wordDB.CanBranch(r); ok {
-						s.stepForward(board, i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, r), callback)
-					}
-				}
-			} else {
-				if next, ok := wordDB.CanBranch(letter); ok {
-					s.stepForward(board, i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, letter), callback)
-				}
-			}
+		s.Search(board, i+dRow, j+dCol, dir, rack, wordDB.Branch(letter), prev, callback)
+		return
+	}
+
+	for i, letter := range rack.Rack {
+		if !rack.CanConsume(i) {
+			continue
 		}
+		if letter.IsBlank() {
+			for r := blankA; r <= blankZ; r++ {
+				if !wordDB.CanBranch(r) {
+					return
+				}
+				if !s.validateCrossWord(board, i+dRow, j+dCol, dir) {
+					return
+				}
+				s.Search(board, i+dRow, j+dCol, dir, rack.Consume(i), wordDB.Branch(r), append(prev, r), callback)
+			}
+			continue
+		}
+
+		if !wordDB.CanBranch(letter) {
+			return
+		}
+		if !s.validateCrossWord(board, i+dRow, j+dCol, dir) {
+			return
+		}
+
+		s.Search(board, i+dRow, j+dCol, dir, rack.Consume(i), wordDB.Branch(letter), append(prev, letter), callback)
 	}
 }
 
-func (s *SpeedyAI) stepForward(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SpeedyAI) validateCrossWord(board *core.Board, i, j int, dir core.Direction) bool {
 	// back up perpendicular to advancing direction until I hit a blank
 	var (
-		ok                 bool
 		perpI, perpJ       = i, j
 		perpDRow, perpDCol = (!dir).Offsets()
 	)
@@ -177,19 +202,17 @@ func (s *SpeedyAI) stepForward(board *core.Board, i, j int, dir core.Direction, 
 	wordRoot := s.searchSpace
 	for board.HasTile(perpI, perpJ) {
 		t := board.Cells[perpI][perpJ].Tile
-		if wordRoot, ok = wordRoot.CanBranch(t); !ok {
+		if !wordRoot.CanBranch(t) {
 			// This is not a word, bail out
-			return
+			return false
 		}
+		wordRoot = wordRoot.Branch(t)
 		perpI += perpDRow
 		perpJ += perpDRow
 	}
 
 	l := (perpI - i) + (perpJ - j)
 
-	// if so, recurse on search
-	if wordRoot.IsTerminal() || l == 0 {
-		s.Search(board, i, j, dir, rack, wordDB, prev, callback)
-	}
-	// if not, return
+	// return true if the sequence is a word or there is only one tile
+	return wordRoot.IsTerminal() || l == 0
 }

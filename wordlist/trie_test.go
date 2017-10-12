@@ -3,7 +3,6 @@ package wordlist
 import (
 	"testing"
 
-	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/definitions"
 
 	"github.com/Logiraptor/word-bot/core"
@@ -32,7 +31,7 @@ func loadWordsWithBuilder() *Trie {
 var blankA = core.Rune2Letter('a').ToTile(false)
 var blankZ = core.Rune2Letter('z').ToTile(false)
 
-func dfs(t ai.WordTree) {
+func dfs(t *Trie) {
 	for x := blankA; x <= blankZ; x++ {
 		if next, ok := t.CanBranch(x); ok {
 			dfs(next)

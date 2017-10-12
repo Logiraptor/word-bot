@@ -23,27 +23,33 @@ func (g *Gaddag) AddWord(word string) {
 func (g *Gaddag) insertLinearString(start, end []rune) {
 	current := g
 	for _, r := range end {
-		current.nodes[r-'a'] = NewGaddag()
+		if current.nodes[r-'a'] == nil {
+			current.nodes[r-'a'] = NewGaddag()
+		}
 		current = current.nodes[r-'a']
 	}
 
-	current.nodes[reverseToken] = NewGaddag()
+	if current.nodes[reverseToken] == nil {
+		current.nodes[reverseToken] = NewGaddag()
+	}
 	current = current.nodes[reverseToken]
 
 	for i := len(start) - 1; i >= 0; i-- {
 		r := start[i]
-		current.nodes[r-'a'] = NewGaddag()
+		if current.nodes[r-'a'] == nil {
+			current.nodes[r-'a'] = NewGaddag()
+		}
 		current = current.nodes[r-'a']
 	}
 	current.terminal = true
 }
 
-func (g *Gaddag) CanBranch(l core.Letter) bool {
-	return g.nodes[l] != nil
+func (g *Gaddag) CanBranch(l core.Tile) bool {
+	return g.nodes[l.ToLetter()] != nil
 }
 
-func (g *Gaddag) Branch(l core.Letter) *Gaddag {
-	return g.nodes[l]
+func (g *Gaddag) Branch(l core.Tile) *Gaddag {
+	return g.nodes[l.ToLetter()]
 }
 
 func (g *Gaddag) CanReverse() bool {

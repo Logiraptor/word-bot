@@ -10,9 +10,9 @@ import (
 func TestGaddagCanBranch(t *testing.T) {
 	gaddag := NewGaddag()
 	gaddag.AddWord("abc")
-	a := core.Rune2Letter('a')
-	b := core.Rune2Letter('b')
-	c := core.Rune2Letter('c')
+	a := core.Rune2Letter('a').ToTile(true)
+	b := core.Rune2Letter('b').ToTile(true)
+	c := core.Rune2Letter('c').ToTile(true)
 
 	assert.True(t, gaddag.CanBranch(a))
 	assert.True(t, gaddag.CanBranch(b))
@@ -22,9 +22,9 @@ func TestGaddagCanBranch(t *testing.T) {
 func TestGaddagBranch(t *testing.T) {
 	gaddag := NewGaddag()
 	gaddag.AddWord("abc")
-	a := core.Rune2Letter('a')
-	b := core.Rune2Letter('b')
-	c := core.Rune2Letter('c')
+	a := core.Rune2Letter('a').ToTile(true)
+	b := core.Rune2Letter('b').ToTile(true)
+	c := core.Rune2Letter('c').ToTile(true)
 
 	aBranch := gaddag.Branch(a)
 	assert.False(t, aBranch.CanBranch(a))
@@ -35,9 +35,9 @@ func TestGaddagBranch(t *testing.T) {
 func TestGaddagCanReverse(t *testing.T) {
 	gaddag := NewGaddag()
 	gaddag.AddWord("abc")
-	a := core.Rune2Letter('a')
-	b := core.Rune2Letter('b')
-	c := core.Rune2Letter('c')
+	a := core.Rune2Letter('a').ToTile(true)
+	b := core.Rune2Letter('b').ToTile(true)
+	c := core.Rune2Letter('c').ToTile(true)
 
 	aBranch := gaddag.Branch(a)
 	bBranch := gaddag.Branch(b)
@@ -50,9 +50,9 @@ func TestGaddagCanReverse(t *testing.T) {
 func TestGaddagReverse(t *testing.T) {
 	gaddag := NewGaddag()
 	gaddag.AddWord("abc")
-	a := core.Rune2Letter('a')
-	b := core.Rune2Letter('b')
-	c := core.Rune2Letter('c')
+	a := core.Rune2Letter('a').ToTile(true)
+	b := core.Rune2Letter('b').ToTile(true)
+	c := core.Rune2Letter('c').ToTile(true)
 
 	cBranch := gaddag.Branch(c).Reverse()
 	assert.False(t, cBranch.CanBranch(a))
@@ -63,9 +63,10 @@ func TestGaddagReverse(t *testing.T) {
 func TestGaddagTerminal(t *testing.T) {
 	gaddag := NewGaddag()
 	gaddag.AddWord("abc")
-	a := core.Rune2Letter('a')
-	b := core.Rune2Letter('b')
-	c := core.Rune2Letter('c')
+	gaddag.AddWord("abcd")
+	a := core.Rune2Letter('a').ToTile(true)
+	b := core.Rune2Letter('b').ToTile(true)
+	c := core.Rune2Letter('c').ToTile(true)
 
 	t1 := gaddag.Branch(c)
 	t2 := t1.Reverse()
