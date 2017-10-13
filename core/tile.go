@@ -1,6 +1,9 @@
 package core
 
-import "unicode"
+import (
+	"fmt"
+	"unicode"
+)
 
 // Tile represents an actual physical tile on the board
 type Tile int
@@ -14,6 +17,10 @@ func (t Tile) String() string {
 		return string(unicode.ToUpper(t.ToRune()))
 	}
 	return string(t.ToRune())
+}
+
+func (t Tile) GoString() string {
+	return fmt.Sprintf("core.Rune2Letter(%q).ToTile(%#v)", t.ToRune(), t.IsBlank())
 }
 
 // PointValue returns the Score associated with a Tile

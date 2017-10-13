@@ -163,10 +163,10 @@ func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 		if letter.IsBlank() {
 			for r := blankA; r <= blankZ; r++ {
 				if !wordDB.CanBranch(r) {
-					return
+					continue
 				}
 				if !s.validateCrossWord(board, i+dRow, j+dCol, dir) {
-					return
+					continue
 				}
 				s.Search(board, i+dRow, j+dCol, dir, rack.Consume(i), wordDB.Branch(r), append(prev, r), callback)
 			}
@@ -174,10 +174,10 @@ func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 		}
 
 		if !wordDB.CanBranch(letter) {
-			return
+			continue
 		}
 		if !s.validateCrossWord(board, i+dRow, j+dCol, dir) {
-			return
+			continue
 		}
 
 		s.Search(board, i+dRow, j+dCol, dir, rack.Consume(i), wordDB.Branch(letter), append(prev, letter), callback)

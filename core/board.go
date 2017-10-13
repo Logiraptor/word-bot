@@ -41,6 +41,10 @@ type WordList interface {
 // Direction is either Horizontal or Verical
 type Direction bool
 
+func (d Direction) GoString() string {
+	return fmt.Sprintf("core.%s", d.String())
+}
+
 // Score is a point value
 type Score int
 
