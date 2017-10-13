@@ -66,7 +66,7 @@ func intersection(a, b []core.Turn) []core.Turn {
 	return output
 }
 
-func compareSets(board *core.Board, a, b []core.Turn) {
+func compareSets(board *core.Board, aName, bName string, a, b []core.Turn) {
 	hasBlank := func(t []core.Tile) bool {
 		for _, x := range t {
 			if x.IsBlank() {
@@ -87,34 +87,34 @@ func compareSets(board *core.Board, a, b []core.Turn) {
 	valid := func(c core.ScoredMove) bool {
 		return board.ValidateMove(c.PlacedTiles, wordDB)
 	}
-	fmt.Printf("A has %d vertical\n", len(filter(a, vertical)))
-	fmt.Printf("B has %d vertical\n", len(filter(b, vertical)))
+	fmt.Printf("%s has %d vertical\n", aName, len(filter(a, vertical)))
+	fmt.Printf("%s has %d vertical\n", bName, len(filter(b, vertical)))
 
-	fmt.Printf("A has %d horizontal\n", len(filter(a, horizontal)))
-	fmt.Printf("B has %d horizontal\n", len(filter(b, horizontal)))
+	fmt.Printf("%s has %d horizontal\n", aName, len(filter(a, horizontal)))
+	fmt.Printf("%s has %d horizontal\n", bName, len(filter(b, horizontal)))
 
-	fmt.Printf("A has %d withBlank\n", len(filter(a, withBlank)))
-	fmt.Printf("B has %d withBlank\n", len(filter(b, withBlank)))
+	fmt.Printf("%s has %d withBlank\n", aName, len(filter(a, withBlank)))
+	fmt.Printf("%s has %d withBlank\n", bName, len(filter(b, withBlank)))
 
-	fmt.Printf("A has %d valid\n", len(filter(a, valid)))
-	fmt.Printf("B has %d valid\n", len(filter(b, valid)))
+	fmt.Printf("%s has %d valid\n", aName, len(filter(a, valid)))
+	fmt.Printf("%s has %d valid\n", bName, len(filter(b, valid)))
 
-	fmt.Printf("A has %d unique\n", len(unique(a)))
-	fmt.Printf("B has %d unique\n", len(unique(b)))
+	fmt.Printf("%s has %d unique\n", aName, len(unique(a)))
+	fmt.Printf("%s has %d unique\n", bName, len(unique(b)))
 
 	fmt.Printf("Intersection is %d\n", len(intersection(a, b)))
 
-	fmt.Printf("A unique has %d vertical\n", len(filter(unique(a), vertical)))
-	fmt.Printf("B unique has %d vertical\n", len(filter(unique(b), vertical)))
+	fmt.Printf("%s unique has %d vertical\n", aName, len(filter(unique(a), vertical)))
+	fmt.Printf("%s unique has %d vertical\n", bName, len(filter(unique(b), vertical)))
 
-	fmt.Printf("A unique has %d horizontal\n", len(filter(unique(a), horizontal)))
-	fmt.Printf("B unique has %d horizontal\n", len(filter(unique(b), horizontal)))
+	fmt.Printf("%s unique has %d horizontal\n", aName, len(filter(unique(a), horizontal)))
+	fmt.Printf("%s unique has %d horizontal\n", bName, len(filter(unique(b), horizontal)))
 
-	fmt.Printf("A unique has %d withBlank\n", len(filter(unique(a), withBlank)))
-	fmt.Printf("B unique has %d withBlank\n", len(filter(unique(b), withBlank)))
+	fmt.Printf("%s unique has %d withBlank\n", aName, len(filter(unique(a), withBlank)))
+	fmt.Printf("%s unique has %d withBlank\n", bName, len(filter(unique(b), withBlank)))
 
-	fmt.Printf("A unique has %d valid\n", len(filter(unique(a), valid)))
-	fmt.Printf("B unique has %d valid\n", len(filter(unique(b), valid)))
+	fmt.Printf("%s unique has %d valid\n", aName, len(filter(unique(a), valid)))
+	fmt.Printf("%s unique has %d valid\n", bName, len(filter(unique(b), valid)))
 }
 
 func TestSpeedyMatchesSmarty(t *testing.T) {
@@ -141,10 +141,24 @@ func TestSpeedyMatchesSmarty(t *testing.T) {
 		return true
 	})
 
+	bruteMoves := []core.Turn{}
+	ai.BruteForce(board, tiles, wordDB, func(t core.Turn) {
+		bruteMoves = append(bruteMoves, t)
+	})
+
+	speedyMoves = unique(speedyMoves)
+	smartyMoves = unique(smartyMoves)
+	bruteMoves = unique(bruteMoves)
+
+	assert.Subset(t, bruteMoves, smartyMoves)
+	if !assert.Equal(t, len(bruteMoves), len(smartyMoves)) {
+		compareSets(board, "brute", "smarty", bruteMoves, smartyMoves)
+		return
+	}
 	// assert.Subset(t, speedyMoves, smartyMoves)
 	assert.Subset(t, smartyMoves, speedyMoves)
 	if !assert.Equal(t, len(smartyMoves), len(speedyMoves)) {
-		compareSets(board, smartyMoves, speedyMoves)
+		compareSets(board, "smarty", "speedy", smartyMoves, speedyMoves)
 	}
 	board.Print()
 }
