@@ -152,19 +152,19 @@ func (s *SmartyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 			s.stepForward(board, i+dRow, j+dCol, dir, rack, next, prev, callback)
 		}
 	} else {
-		for i, letter := range rack.Rack {
-			if !rack.CanConsume(i) {
+		for index, letter := range rack.Rack {
+			if !rack.CanConsume(index) {
 				continue
 			}
 			if letter.IsBlank() {
 				for r := blankA; r <= blankZ; r++ {
 					if next, ok := wordDB.CanBranch(r); ok {
-						s.stepForward(board, i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, r), callback)
+						s.stepForward(board, i+dRow, j+dCol, dir, rack.Consume(index), next, append(prev, r), callback)
 					}
 				}
 			} else {
 				if next, ok := wordDB.CanBranch(letter); ok {
-					s.stepForward(board, i+dRow, j+dCol, dir, rack.Consume(i), next, append(prev, letter), callback)
+					s.stepForward(board, i+dRow, j+dCol, dir, rack.Consume(index), next, append(prev, letter), callback)
 				}
 			}
 		}
