@@ -1,8 +1,11 @@
 package ai_test
 
 import (
+	"encoding/csv"
 	"fmt"
+	"os"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -117,6 +120,27 @@ func compareSets(board *core.Board, aName, bName string, a, b []core.Turn) {
 	fmt.Printf("%s unique has %d valid\n", bName, len(filter(unique(b), valid)))
 }
 
+func dumpTurns(filename string, moves []core.Turn) {
+	f, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	wr := csv.NewWriter(f)
+	defer wr.Flush()
+	for _, t := range moves {
+		if m, ok := t.(core.ScoredMove); ok {
+			wr.Write([]string{
+				strconv.Itoa(m.Row),
+				strconv.Itoa(m.Col),
+				core.Tiles2String(m.Word),
+				m.Direction.String(),
+			})
+		}
+	}
+}
+
 func TestSpeedyMatchesSmarty(t *testing.T) {
 	tiles := core.NewConsumableRack(core.MakeTiles(core.MakeWord("asdjdha"), "xxxxxx "))
 	board := core.NewBoard()
@@ -149,6 +173,22 @@ func TestSpeedyMatchesSmarty(t *testing.T) {
 	speedyMoves = unique(speedyMoves)
 	smartyMoves = unique(smartyMoves)
 	bruteMoves = unique(bruteMoves)
+
+	// dumpTurns("brute.csv", bruteMoves)
+	// dumpTurns("smarty.csv", smartyMoves)
+	// dumpTurns("speedy.csv", speedyMoves)
+	pt := core.PlacedTiles{
+		Word:      core.MakeTiles(core.MakeWord("add"), " xx"),
+		Row:       6,
+		Col:       10,
+		Direction: core.Horizontal,
+	}
+	fmt.Println("HERERERERERERERERERERER", board.ValidateMove(pt, wordDB))
+	smarty.Search(board, 6, 10, core.Horizontal, tiles, wordDB, nil, func(t []core.Tile) {
+		if reflect.DeepEqual(t, pt.Word) {
+			fmt.Println("GENERATED")
+		}
+	})
 
 	assert.Subset(t, bruteMoves, smartyMoves)
 	if !assert.Equal(t, len(bruteMoves), len(smartyMoves)) {
