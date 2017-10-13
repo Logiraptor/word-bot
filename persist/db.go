@@ -122,7 +122,7 @@ func (db *DB) PrintStats() {
 	SELECT REPLACE(p1, X'0A', ''), REPLACE(p2, X'0A', ''), SUM(win), COUNT(win), 100 * (CAST(SUM(win) AS float) / CAST(COUNT(win) AS float)) as winrate
 	FROM matchups
 	GROUP BY p1, p2
-	ORDER BY winrate
+	ORDER BY winrate DESC
 
 	`
 

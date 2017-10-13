@@ -2,6 +2,7 @@ package ai_test
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,6 +30,37 @@ func filter(scoredMoves []core.Turn, pred func(core.ScoredMove) bool) []core.Sco
 			if pred(m) {
 				output = append(output, m)
 			}
+		}
+	}
+	return output
+}
+
+func unique(turns []core.Turn) []core.Turn {
+	output := []core.Turn{}
+outer:
+	for _, m := range turns {
+		if contains(output, m) {
+			continue outer
+		}
+		output = append(output, m)
+	}
+	return output
+}
+
+func contains(turns []core.Turn, t core.Turn) bool {
+	for _, x := range turns {
+		if reflect.DeepEqual(x, t) {
+			return true
+		}
+	}
+	return false
+}
+
+func intersection(a, b []core.Turn) []core.Turn {
+	output := []core.Turn{}
+	for i := range a {
+		if contains(a, a[i]) && contains(b, a[i]) && (!contains(output, a[i])) {
+			output = append(output, a[i])
 		}
 	}
 	return output
@@ -66,13 +98,30 @@ func compareSets(board *core.Board, a, b []core.Turn) {
 
 	fmt.Printf("A has %d valid\n", len(filter(a, valid)))
 	fmt.Printf("B has %d valid\n", len(filter(b, valid)))
+
+	fmt.Printf("A has %d unique\n", len(unique(a)))
+	fmt.Printf("B has %d unique\n", len(unique(b)))
+
+	fmt.Printf("Intersection is %d\n", len(intersection(a, b)))
+
+	fmt.Printf("A unique has %d vertical\n", len(filter(unique(a), vertical)))
+	fmt.Printf("B unique has %d vertical\n", len(filter(unique(b), vertical)))
+
+	fmt.Printf("A unique has %d horizontal\n", len(filter(unique(a), horizontal)))
+	fmt.Printf("B unique has %d horizontal\n", len(filter(unique(b), horizontal)))
+
+	fmt.Printf("A unique has %d withBlank\n", len(filter(unique(a), withBlank)))
+	fmt.Printf("B unique has %d withBlank\n", len(filter(unique(b), withBlank)))
+
+	fmt.Printf("A unique has %d valid\n", len(filter(unique(a), valid)))
+	fmt.Printf("B unique has %d valid\n", len(filter(unique(b), valid)))
 }
 
 func TestSpeedyMatchesSmarty(t *testing.T) {
 	tiles := core.NewConsumableRack(core.MakeTiles(core.MakeWord("asdjdha"), "xxxxxx "))
 	board := core.NewBoard()
 
-	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("doggo"), "xxxxx"), 7, 7, core.Vertical})
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("doggo"), "xxxxx"), 7, 7, core.Horizontal})
 	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("ar"), "xx"), 7, 8, core.Vertical})
 
 	speedy := ai.NewSpeedyAI(wordDB, wordGaddag)
@@ -92,11 +141,12 @@ func TestSpeedyMatchesSmarty(t *testing.T) {
 		return true
 	})
 
+	// assert.Subset(t, speedyMoves, smartyMoves)
+	assert.Subset(t, smartyMoves, speedyMoves)
 	if !assert.Equal(t, len(smartyMoves), len(speedyMoves)) {
 		compareSets(board, smartyMoves, speedyMoves)
 	}
-	assert.Subset(t, speedyMoves, smartyMoves)
-	assert.Subset(t, smartyMoves, speedyMoves)
+	board.Print()
 }
 
 func BenchmarkSpeedy(b *testing.B) {
@@ -127,6 +177,6 @@ func BenchmarkSpeedySearch(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		speedy.Search(board, 8, 8, core.Horizontal, rack, wordGaddag, prev, func([]core.Tile) {})
+		speedy.Search(board, 8, 8, core.Horizontal, rack, wordGaddag, prev, func(int, int, []core.Tile) {})
 	}
 }
