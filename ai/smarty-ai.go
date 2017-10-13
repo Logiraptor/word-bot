@@ -149,7 +149,7 @@ func (s *SmartyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 	if board.HasTile(i, j) {
 		letter := board.Cells[i][j].Tile
 		if next, ok := wordDB.CanBranch(letter); ok {
-			s.stepForward(board, i+dRow, j+dCol, dir, rack, next, prev, callback)
+			s.Search(board, i+dRow, j+dCol, dir, rack, next, prev, callback)
 		}
 	} else {
 		for index, letter := range rack.Rack {
@@ -159,24 +159,24 @@ func (s *SmartyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 			if letter.IsBlank() {
 				for r := blankA; r <= blankZ; r++ {
 					if next, ok := wordDB.CanBranch(r); ok {
-						s.stepForward(board, i+dRow, j+dCol, dir, rack.Consume(index), next, append(prev, r), callback)
+						s.stepForward(board, i, j, r, dir, rack.Consume(index), next, append(prev, r), callback)
 					}
 				}
 			} else {
 				if next, ok := wordDB.CanBranch(letter); ok {
-					s.stepForward(board, i+dRow, j+dCol, dir, rack.Consume(index), next, append(prev, letter), callback)
+					s.stepForward(board, i, j, letter, dir, rack.Consume(index), next, append(prev, letter), callback)
 				}
 			}
 		}
 	}
 }
 
-func (s *SmartyAI) stepForward(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SmartyAI) stepForward(board *core.Board, i, j int, placed core.Tile, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
 	// back up perpendicular to advancing direction until I hit a blank
 	var (
 		ok                 bool
-		perpI, perpJ       = i, j
 		perpDRow, perpDCol = (!dir).Offsets()
+		perpI, perpJ       = i - perpDRow, j - perpDCol
 	)
 	for board.HasTile(perpI, perpJ) {
 		perpI -= perpDRow
@@ -184,25 +184,35 @@ func (s *SmartyAI) stepForward(board *core.Board, i, j int, dir core.Direction, 
 	}
 	// go back to the last tile I was on
 	perpI += perpDRow
-	perpJ += perpDRow
+	perpJ += perpDCol
+	startI, startJ := perpI, perpJ
 
 	// validate continuous string of tiles is a word
 	wordRoot := s.searchSpace
-	for board.HasTile(perpI, perpJ) {
-		t := board.Cells[perpI][perpJ].Tile
-		if wordRoot, ok = wordRoot.CanBranch(t); !ok {
-			// This is not a word, bail out
-			return
+	for {
+		if board.HasTile(perpI, perpJ) {
+			t := board.Cells[perpI][perpJ].Tile
+			if wordRoot, ok = wordRoot.CanBranch(t); !ok {
+				// This is not a word, bail out
+				return
+			}
+		} else if perpI == i && perpJ == j {
+			if wordRoot, ok = wordRoot.CanBranch(placed); !ok {
+				return
+			}
+		} else {
+			break
 		}
 		perpI += perpDRow
-		perpJ += perpDRow
+		perpJ += perpDCol
 	}
 
-	l := (perpI - i) + (perpJ - j)
+	l := (perpI - startI) + (perpJ - startJ)
 
 	// if so, recurse on search
-	if wordRoot.IsTerminal() || l == 0 {
-		s.Search(board, i, j, dir, rack, wordDB, prev, callback)
+	if wordRoot.IsTerminal() || l == 1 {
+		dRow, dCol := dir.Offsets()
+		s.Search(board, i+dRow, j+dCol, dir, rack, wordDB, prev, callback)
 	}
 	// if not, return
 }
