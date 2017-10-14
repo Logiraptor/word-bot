@@ -343,10 +343,10 @@ func (b *Board) Print() {
 		for j, cell := range row {
 			_, _ = i, j
 
-			letter := ' '
+			letter := " "
 			cellColor := color.New(color.FgBlack)
 			if b.HasTile(i, j) {
-				letter = cell.Tile.ToRune()
+				letter = cell.Tile.String()
 				cellColor = cellColor.Add(color.BgMagenta)
 			} else {
 				switch cell.Bonus {
@@ -363,7 +363,7 @@ func (b *Board) Print() {
 				}
 			}
 
-			cellColor.Printf(" %c ", letter)
+			cellColor.Printf(" %s ", letter)
 		}
 		fmt.Println()
 	}

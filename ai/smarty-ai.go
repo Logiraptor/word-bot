@@ -71,6 +71,9 @@ func (s *SmartyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 	go func() {
 		for i := 0; i < 15; i++ {
 			for j := 0; j < 15; j++ {
+				if b.HasTile(i, j) {
+					continue
+				}
 				for _, dir := range dirs {
 					wg.Add(1)
 					s.jobs <- job{

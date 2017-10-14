@@ -6,7 +6,7 @@ import (
 
 func BruteForce(b *core.Board, rack core.Rack, wordDB core.WordList, callback func(core.Turn)) {
 	dirs := []core.Direction{core.Horizontal, core.Vertical}
-	perms := permute(rack.Rack)
+	perms := Permute(rack.Rack)
 	for i := 0; i < 15; i++ {
 		for j := 0; j < 15; j++ {
 			if b.HasTile(i, j) {
@@ -32,33 +32,33 @@ func BruteForce(b *core.Board, rack core.Rack, wordDB core.WordList, callback fu
 	}
 }
 
-func permute(rack []core.Tile) [][]core.Tile {
-	if len(rack) == 0 {
-		return [][]core.Tile{nil}
-	}
-	first := rack[0]
-	rest := rack[1:]
-	subPerm := permute(rest)
-	output := make([][]core.Tile, len(subPerm), len(subPerm)*2)
-	copy(output, subPerm)
+func Permute(str []core.Tile) [][]core.Tile {
+	result := [][]core.Tile{}
+	if len(str) > 0 {
+		for i, c := range str {
 
-	if first.IsBlank() {
-		for option := 'a'; option <= 'z'; option++ {
-			letter := core.Rune2Letter(option).ToTile(true)
-			for _, perm := range subPerm {
-				for i := range perm {
-					output = append(output, append(append(perm[:i:i], letter), perm[i:]...))
+			if c.IsBlank() {
+				for c := blankA; c <= blankZ; c++ {
+					s := append(str[:i:i], str[i+1:]...)
+					result = append(result, []core.Tile{c})
+					if len(s) > 0 {
+						e := Permute(s)
+						for j := range e {
+							result = append(result, append([]core.Tile{c}, e[j]...))
+						}
+					}
 				}
-				output = append(output, append(perm, letter))
+			} else {
+				s := append(str[:i:i], str[i+1:]...)
+				result = append(result, []core.Tile{c})
+				if len(s) > 0 {
+					e := Permute(s)
+					for j := range e {
+						result = append(result, append([]core.Tile{c}, e[j]...))
+					}
+				}
 			}
 		}
-		return output
 	}
-	for _, perm := range subPerm {
-		for i := range perm {
-			output = append(output, append(append(perm[:i:i], first), perm[i:]...))
-		}
-		output = append(output, append(perm, first))
-	}
-	return output
+	return result
 }
