@@ -1,0 +1,316 @@
+{
+    "moves": [
+        {
+            "tiles": [
+                { "Letter": "y", "Blank": false, "Value": 4, "Bonus": "" },
+                { "Letter": "a", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "k", "Blank": false, "Value": 5, "Bonus": "" },
+                { "Letter": "s", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 4,
+            "col": 7,
+            "direction": "vertical",
+            "score": 22,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "o", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "u", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "r", "Value": 0, "Bonus": "" }
+            ],
+            "row": 4,
+            "col": 8,
+            "player": 2,
+            "direction": "horizontal"
+        },
+        {
+            "tiles": [
+                { "Letter": "p", "Blank": false, "Value": 3, "Bonus": "" },
+                { "Letter": "d", "Blank": false, "Value": 2, "Bonus": "" },
+                { "Letter": "i", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "v", "Blank": false, "Value": 4, "Bonus": "" },
+                { "Letter": "e", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 4,
+            "col": 9,
+            "direction": "vertical",
+            "score": 20,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "n", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "v", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "i", "Value": 0, "Bonus": "" },
+                { "Blank": true, "Letter": "t", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "e", "Value": 0, "Bonus": "" }
+            ],
+            "row": 7,
+            "col": 10,
+            "player": 2,
+            "direction": "horizontal"
+        },
+        {
+            "tiles": [
+                { "Letter": "a", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "l", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "u", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "e", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 7,
+            "col": 11,
+            "direction": "vertical",
+            "score": 16,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "b", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "n", "Value": 0, "Bonus": "" }
+            ],
+            "row": 6,
+            "col": 12,
+            "player": 2,
+            "direction": "vertical"
+        },
+        {
+            "tiles": [
+                { "Letter": "l", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "i", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "e", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "r", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 5,
+            "col": 13,
+            "direction": "vertical",
+            "score": 15,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "g", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "m", "Value": 0, "Bonus": "" }
+            ],
+            "row": 10,
+            "col": 10,
+            "player": 2,
+            "direction": "horizontal"
+        },
+        {
+            "tiles": [
+                { "Letter": "t", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "h", "Blank": false, "Value": 4, "Bonus": "" },
+                { "Letter": "i", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "n", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 1,
+            "col": 11,
+            "direction": "vertical",
+            "score": 22,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Letter": "o", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "d", "Blank": false, "Value": 2, "Bonus": "" }
+            ],
+            "row": 2,
+            "col": 12,
+            "direction": "vertical",
+            "score": 19,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "w", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "a", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "f", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "t", "Value": 0, "Bonus": "" }
+            ],
+            "row": 7,
+            "col": 3,
+            "player": 2,
+            "direction": "horizontal"
+        },
+        {
+            "tiles": [
+                { "Letter": "j", "Blank": false, "Value": 8, "Bonus": "" },
+                { "Letter": "a", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "m", "Blank": false, "Value": 3, "Bonus": "" }
+            ],
+            "row": 0,
+            "col": 10,
+            "direction": "vertical",
+            "score": 22,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "c", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "r", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "f", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "t", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "y", "Value": 0, "Bonus": "" }
+            ],
+            "row": 5,
+            "col": 4,
+            "player": 2,
+            "direction": "vertical"
+        },
+        {
+            "tiles": [
+                { "Letter": "e", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "t", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "c", "Blank": false, "Value": 3, "Bonus": "" },
+                { "Letter": "h", "Blank": false, "Value": 4, "Bonus": "" }
+            ],
+            "row": 10,
+            "col": 5,
+            "direction": "vertical",
+            "score": 22,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Letter": "p", "Blank": false, "Value": 3, "Bonus": "" },
+                { "Letter": "u", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "t", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "t", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "i", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 10,
+            "col": 3,
+            "direction": "vertical",
+            "score": 24,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "b", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "e", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "g", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "n", "Value": 0, "Bonus": "" }
+            ],
+            "row": 14,
+            "col": 0,
+            "player": 2,
+            "direction": "horizontal"
+        },
+        {
+            "tiles": [
+                { "Letter": "a", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "d", "Blank": false, "Value": 2, "Bonus": "" },
+                { "Letter": "z", "Blank": false, "Value": 10, "Bonus": "" }
+            ],
+            "row": 11,
+            "col": 1,
+            "direction": "vertical",
+            "score": 28,
+            "player": 1
+        },
+        {
+            "tiles": [ { "Blank": false, "Letter": "s", "Value": 0, "Bonus": "" } ],
+            "row": 10,
+            "col": 13,
+            "player": 2,
+            "direction": "horizontal"
+        },
+        {
+            "tiles": [
+                { "Letter": "o", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "e", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 6,
+            "col": 3,
+            "direction": "vertical",
+            "score": 13,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": true, "Letter": "o", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "a", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "x", "Value": 0, "Bonus": "" }
+            ],
+            "row": 12,
+            "col": 6,
+            "player": 2,
+            "direction": "horizontal"
+        },
+        {
+            "tiles": [
+                { "Letter": "a", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "r", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "i", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "e", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "l", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 7,
+            "col": 0,
+            "direction": "vertical",
+            "score": 21,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "s", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "i", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "n", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "g", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "e", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "d", "Value": 0, "Bonus": "" }
+            ],
+            "row": 2,
+            "col": 1,
+            "player": 2,
+            "direction": "vertical"
+        },
+        {
+            "tiles": [
+                { "Letter": "i", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "r", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "e", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 0,
+            "col": 0,
+            "direction": "vertical",
+            "score": 11,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Letter": "e", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Letter": "s", "Blank": false, "Value": 1, "Bonus": "" }
+            ],
+            "row": 6,
+            "col": 5,
+            "direction": "vertical",
+            "score": 15,
+            "player": 1
+        },
+        {
+            "tiles": [
+                { "Blank": false, "Letter": "l", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "a", "Value": 0, "Bonus": "" },
+                { "Blank": false, "Letter": "w", "Value": 0, "Bonus": "" }
+            ],
+            "row": 11,
+            "col": 7,
+            "player": 2,
+            "direction": "horizontal"
+        },
+        {
+            "tiles": [
+                { "Letter": "i", "Blank": false, "Value": 1, "Bonus": "" },
+                { "Blank": false, "Letter": "r", "Value": 0, "Bonus": "" }
+            ],
+            "row": 12,
+            "col": 7,
+            "direction": "vertical",
+            "score": 12,
+            "player": 1
+        }
+    ],
+    "rack": []
+}

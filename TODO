@@ -11,3 +11,10 @@ Faster move generation - "speedy"
     compare to smarty for benchmarks
     implement gaddag
 
+
+Test Move generation
+    Brute as standard baseline
+    Smarty as matching that ^
+    Speedy as matching that ^
+
+

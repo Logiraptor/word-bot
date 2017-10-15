@@ -173,7 +173,7 @@ func (s *SpeedyAI) searchForward(board *core.Board, startI, startJ, i, j int, di
 				if !wordDB.CanBranch(r) {
 					continue
 				}
-				if !s.validateCrossWord(board, i+dRow, j+dCol, dir) {
+				if !s.validateCrossWord(board, i+dRow, j+dCol, r, dir) {
 					continue
 				}
 				s.searchForward(board, startI, startJ, i+dRow, j+dCol, dir, rack.Consume(i), wordDB.Branch(r), append(prev, r), callback)
@@ -184,7 +184,7 @@ func (s *SpeedyAI) searchForward(board *core.Board, startI, startJ, i, j int, di
 		if !wordDB.CanBranch(letter) {
 			continue
 		}
-		if !s.validateCrossWord(board, i+dRow, j+dCol, dir) {
+		if !s.validateCrossWord(board, i+dRow, j+dCol, letter, dir) {
 			continue
 		}
 
@@ -221,7 +221,7 @@ func (s *SpeedyAI) searchBackward(board *core.Board, i, j int, dir core.Directio
 				if !wordDB.CanBranch(r) {
 					continue
 				}
-				if !s.validateCrossWord(board, i+dRow, j+dCol, dir) {
+				if !s.validateCrossWord(board, i+dRow, j+dCol, r, dir) {
 					continue
 				}
 				s.searchBackward(board, i+dRow, j+dCol, dir, rack.Consume(i), wordDB.Branch(r), append(prev, r), callback)
@@ -232,7 +232,7 @@ func (s *SpeedyAI) searchBackward(board *core.Board, i, j int, dir core.Directio
 		if !wordDB.CanBranch(letter) {
 			continue
 		}
-		if !s.validateCrossWord(board, i+dRow, j+dCol, dir) {
+		if !s.validateCrossWord(board, i+dRow, j+dCol, letter, dir) {
 			continue
 		}
 
@@ -240,11 +240,11 @@ func (s *SpeedyAI) searchBackward(board *core.Board, i, j int, dir core.Directio
 	}
 }
 
-func (s *SpeedyAI) validateCrossWord(board *core.Board, i, j int, dir core.Direction) bool {
+func (s *SpeedyAI) validateCrossWord(board *core.Board, i, j int, placed core.Tile, dir core.Direction) bool {
 	// back up perpendicular to advancing direction until I hit a blank
 	var (
-		perpI, perpJ       = i, j
 		perpDRow, perpDCol = (!dir).Offsets()
+		perpI, perpJ       = i - perpDRow, j - perpDCol
 	)
 	for board.HasTile(perpI, perpJ) {
 		perpI -= perpDRow
@@ -252,23 +252,32 @@ func (s *SpeedyAI) validateCrossWord(board *core.Board, i, j int, dir core.Direc
 	}
 	// go back to the last tile I was on
 	perpI += perpDRow
-	perpJ += perpDRow
+	perpJ += perpDCol
+	startI, startJ := perpI, perpJ
 
 	// validate continuous string of tiles is a word
 	wordRoot := s.searchSpace
-	for board.HasTile(perpI, perpJ) {
-		t := board.Cells[perpI][perpJ].Tile
-		if !wordRoot.CanBranch(t) {
-			// This is not a word, bail out
-			return false
+	for {
+		if board.HasTile(perpI, perpJ) {
+			t := board.Cells[perpI][perpJ].Tile
+			if !wordRoot.CanBranch(t) {
+				// This is not a word, bail out
+				return false
+			}
+			wordRoot = wordRoot.Branch(t)
+		} else if perpI == i && perpJ == j {
+			if !wordRoot.CanBranch(placed) {
+				return false
+			}
+			wordRoot = wordRoot.Branch(placed)
+		} else {
+			break
 		}
-		wordRoot = wordRoot.Branch(t)
 		perpI += perpDRow
-		perpJ += perpDRow
+		perpJ += perpDCol
 	}
 
-	l := (perpI - i) + (perpJ - j)
+	l := (perpI - startI) + (perpJ - startJ)
 
-	// return true if the sequence is a word or there is only one tile
-	return wordRoot.IsTerminal() || l == 0
+	return wordRoot.IsTerminal() || l == 1
 }
