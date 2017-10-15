@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 
@@ -142,21 +141,44 @@ func (s *SmartyAI) Name() string {
 }
 
 func (s *SmartyAI) Search(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
+	// backup to next blank
+	dRow, dCol := dir.Offsets()
+	row, col := i-dRow, j-dCol
+	for board.HasTile(row, col) {
+		row -= dRow
+		col -= dCol
+	}
+	row += dRow
+	col += dCol
+
+	// prepare trie for word generation
+	for (row < i || col < j) && board.HasTile(row, col) {
+		var ok bool
+		t := board.Cells[row][col].Tile
+		wordDB, ok = wordDB.CanBranch(t)
+		if !ok {
+			return
+		}
+		row += dRow
+		col += dCol
+	}
+
+	s.searchRest(board, i, j, dir, rack, wordDB, prev, callback)
+}
+
+func (s *SmartyAI) searchRest(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
 	dRow, dCol := dir.Offsets()
 	if wordDB.IsTerminal() {
-		fmt.Println("FOUND: ", prev)
 		callback(prev)
 	}
 
 	if board.OutOfBounds(i, j) {
-		fmt.Println("BAIL: Out of bounds")
 		return
 	}
 	if board.HasTile(i, j) {
 		letter := board.Cells[i][j].Tile
 		if next, ok := wordDB.CanBranch(letter); ok {
-			fmt.Println("CONT: Consuming tile from board", letter)
-			s.Search(board, i+dRow, j+dCol, dir, rack, next, prev, callback)
+			s.searchRest(board, i+dRow, j+dCol, dir, rack, next, prev, callback)
 		}
 	} else {
 		for index, letter := range rack.Rack {
@@ -165,14 +187,12 @@ func (s *SmartyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 			}
 			if letter.IsBlank() {
 				for r := blankA; r <= blankZ; r++ {
-					fmt.Println("CONT: Consuming tile from rack", r)
 					if next, ok := wordDB.CanBranch(r); ok {
 						s.stepForward(board, i, j, r, dir, rack.Consume(index), next, append(prev, r), callback)
 					}
 				}
 			} else {
 				if next, ok := wordDB.CanBranch(letter); ok {
-					fmt.Println("CONT: Consuming tile from rack", letter)
 					s.stepForward(board, i, j, letter, dir, rack.Consume(index), next, append(prev, letter), callback)
 				}
 			}
@@ -221,7 +241,7 @@ func (s *SmartyAI) stepForward(board *core.Board, i, j int, placed core.Tile, di
 	// if so, recurse on search
 	if wordRoot.IsTerminal() || l == 1 {
 		dRow, dCol := dir.Offsets()
-		s.Search(board, i+dRow, j+dCol, dir, rack, wordDB, prev, callback)
+		s.searchRest(board, i+dRow, j+dCol, dir, rack, wordDB, prev, callback)
 	}
 	// if not, return
 }

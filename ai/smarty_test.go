@@ -7,6 +7,7 @@ import (
 	"github.com/Logiraptor/word-bot/core"
 	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/wordlist"
+	"github.com/stretchr/testify/assert"
 )
 
 var wordDB *wordlist.Trie
@@ -16,6 +17,40 @@ func init() {
 	err := definitions.LoadWords("../words.txt", wordDB)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func TestSmartyMatchesBrute(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Brute is too slow")
+	}
+	tiles := core.NewConsumableRack(core.MakeTiles(core.MakeWord("asdjdha"), "xxxxxx "))
+	board := core.NewBoard()
+
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("doggo"), "xxxxx"), 7, 7, core.Horizontal})
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("ar"), "xx"), 7, 8, core.Vertical})
+
+	smarty := ai.NewSmartyAI(wordDB, wordDB)
+	defer smarty.Kill()
+
+	smartyMoves := []core.Turn{}
+	smarty.GenerateMoves(board, tiles, func(t core.Turn) bool {
+		smartyMoves = append(smartyMoves, t)
+		return true
+	})
+
+	bruteMoves := []core.Turn{}
+	ai.BruteForce(board, tiles, wordDB, func(t core.Turn) {
+		bruteMoves = append(bruteMoves, t)
+	})
+
+	smartyMoves = unique(smartyMoves)
+	bruteMoves = unique(bruteMoves)
+
+	assert.Subset(t, bruteMoves, smartyMoves)
+	if !assert.Equal(t, len(bruteMoves), len(smartyMoves)) {
+		compareSets(board, "brute", "smarty", bruteMoves, smartyMoves)
+		return
 	}
 }
 

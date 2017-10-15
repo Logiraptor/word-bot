@@ -8,12 +8,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
 	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/wordlist"
+	"github.com/stretchr/testify/assert"
 )
 
 var wordGaddag *wordlist.Gaddag
@@ -165,42 +164,14 @@ func TestSpeedyMatchesSmarty(t *testing.T) {
 		return true
 	})
 
-	bruteMoves := []core.Turn{}
-	ai.BruteForce(board, tiles, wordDB, func(t core.Turn) {
-		bruteMoves = append(bruteMoves, t)
-	})
-
 	speedyMoves = unique(speedyMoves)
 	smartyMoves = unique(smartyMoves)
-	bruteMoves = unique(bruteMoves)
 
-	dumpTurns("brute.csv", bruteMoves)
-	dumpTurns("smarty.csv", smartyMoves)
-	dumpTurns("speedy.csv", speedyMoves)
-	// pt := core.PlacedTiles{
-	// 	Word:      core.MakeTiles(core.MakeWord("add"), " xx"),
-	// 	Row:       6,
-	// 	Col:       10,
-	// 	Direction: core.Horizontal,
-	// }
-	// fmt.Println("HERERERERERERERERERERER", board.ValidateMove(pt, wordDB))
-	// smarty.Search(board, 6, 10, core.Horizontal, tiles, wordDB, nil, func(t []core.Tile) {
-	// 	if reflect.DeepEqual(t, pt.Word) {
-	// 		fmt.Println("GENERATED")
-	// 	}
-	// })
-
-	assert.Subset(t, bruteMoves, smartyMoves)
-	if !assert.Equal(t, len(bruteMoves), len(smartyMoves)) {
-		compareSets(board, "brute", "smarty", bruteMoves, smartyMoves)
-		return
-	}
-	// assert.Subset(t, speedyMoves, smartyMoves)
+	assert.Subset(t, speedyMoves, smartyMoves)
 	assert.Subset(t, smartyMoves, speedyMoves)
 	if !assert.Equal(t, len(smartyMoves), len(speedyMoves)) {
 		compareSets(board, "smarty", "speedy", smartyMoves, speedyMoves)
 	}
-	board.Print()
 }
 
 func BenchmarkSpeedy(b *testing.B) {

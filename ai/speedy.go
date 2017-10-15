@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 
@@ -86,7 +85,7 @@ func (s *SpeedyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 							wg:         wg,
 							wordDB:     s.searchSpace,
 						}
-						fmt.Println("Pursuing", i, j)
+						// fmt.Println("Pursuing", i, j)
 					}
 				}
 			}

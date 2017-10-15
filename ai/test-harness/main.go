@@ -75,6 +75,7 @@ func main() {
 		b.PlaceTiles(m.PlacedTiles)
 		fmt.Println("AFTER", m)
 		b.Print()
+		smarty.Search(board, m.Row, m.Col, m.Direction, core.NewConsumableRack(m.Word), wordDB, nil, func([]core.Tile) {})
 		fmt.Scanln()
 	}
 }
