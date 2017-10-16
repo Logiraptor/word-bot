@@ -12,9 +12,16 @@ import (
 
 var wordDB *wordlist.Trie
 
+var wordGaddag *wordlist.Gaddag
+
 func init() {
 	wordDB = wordlist.NewTrie()
+	wordGaddag = wordlist.NewGaddag()
 	err := definitions.LoadWords("../../words.txt", wordDB)
+	if err != nil {
+		panic(err)
+	}
+	err = definitions.LoadWords("../../words.txt", wordGaddag)
 	if err != nil {
 		panic(err)
 	}
@@ -51,6 +58,15 @@ func main() {
 	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("ar"), "xx"), 7, 8, core.Vertical})
 
 	smarty := ai.NewSmartyAI(wordDB, wordDB)
+	defer smarty.Kill()
+	speedy := ai.NewSpeedyAI(wordDB, wordGaddag)
+	defer speedy.Kill()
+
+	speedyMoves := []core.Turn{}
+	speedy.GenerateMoves(board, tiles, func(t core.Turn) bool {
+		speedyMoves = append(speedyMoves, t)
+		return true
+	})
 
 	smartyMoves := []core.Turn{}
 	smarty.GenerateMoves(board, tiles, func(t core.Turn) bool {
@@ -58,12 +74,7 @@ func main() {
 		return true
 	})
 
-	bruteMoves := []core.Turn{}
-	ai.BruteForce(board, tiles, wordDB, func(t core.Turn) {
-		bruteMoves = append(bruteMoves, t)
-	})
-
-	d := diff(bruteMoves, smartyMoves)
+	d := diff(smartyMoves, speedyMoves)
 	for _, x := range d {
 		m, ok := x.(core.ScoredMove)
 		if !ok {
@@ -75,7 +86,8 @@ func main() {
 		b.PlaceTiles(m.PlacedTiles)
 		fmt.Println("AFTER", m)
 		b.Print()
-		smarty.Search(board, m.Row, m.Col, m.Direction, core.NewConsumableRack(m.Word), wordDB, nil, func([]core.Tile) {})
+		speedy.Search(board, 6, 7, core.Vertical, core.NewConsumableRack(m.Word), wordGaddag, nil, func(int, int, []core.Tile, []core.Tile) {})
+
 		fmt.Scanln()
 	}
 }

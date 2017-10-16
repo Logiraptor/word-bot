@@ -202,6 +202,6 @@ func BenchmarkSpeedySearch(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		speedy.Search(board, 8, 8, core.Horizontal, rack, wordGaddag, prev, func(int, int, []core.Tile) {})
+		speedy.Search(board, 8, 8, core.Horizontal, rack, wordGaddag, prev, func(int, int, []core.Tile, []core.Tile) {})
 	}
 }
