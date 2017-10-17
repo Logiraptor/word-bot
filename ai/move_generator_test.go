@@ -74,12 +74,17 @@ func collectMoves(board *core.Board, rack core.Rack, moveGen ai.MoveGenerator) [
 func MoveGeneratorContract(t *testing.T, makeMoveGenerator MoveGenConstructor) {
 	words := []string{"cab"}
 	expectedMoves := []core.ScoredMove{
-		move(7, 7, core.Horizontal, "cab", 6),
+		move(6, 7, core.Vertical, "cab", 6),
 	}
-	rackTiles := core.MakeTiles(core.MakeWord("abc"), "xxx")
+	rackTiles := core.MakeTiles(core.MakeWord("bc"), "xx")
+	boardFunc := func() *core.Board {
+		b := core.NewBoard()
+		b.PlaceTiles(move(7, 6, core.Horizontal, "cab", 0).PlacedTiles)
+		return b
+	}
 
 	ai := makeMoveGenerator(words)
-	board := core.NewBoard()
+	board := boardFunc()
 	rack := core.NewConsumableRack(rackTiles)
 	moves := collectMoves(board, rack, ai)
 	assert.Subset(t, moves, expectedMoves)
