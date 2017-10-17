@@ -60,6 +60,18 @@ func TestSmartyMoveGen(t *testing.T) {
 	})
 }
 
+func TestBruteMoveGen(t *testing.T) {
+	MoveGeneratorContract(t, func(words []string) ai.MoveGenerator {
+		wordDB := wordlist.NewTrie()
+
+		for _, word := range words {
+			wordDB.AddWord(word)
+		}
+
+		return ai.NewBrute(wordDB)
+	})
+}
+
 func collectMoves(board *core.Board, rack core.Rack, moveGen ai.MoveGenerator) []core.ScoredMove {
 	output := []core.ScoredMove{}
 	moveGen.GenerateMoves(board, rack, func(t core.Turn) bool {
@@ -74,7 +86,7 @@ func collectMoves(board *core.Board, rack core.Rack, moveGen ai.MoveGenerator) [
 func MoveGeneratorContract(t *testing.T, makeMoveGenerator MoveGenConstructor) {
 	words := []string{"cab"}
 	expectedMoves := []core.ScoredMove{
-		move(6, 7, core.Vertical, "cab", 6),
+		move(6, 7, core.Vertical, "cb", 7),
 	}
 	rackTiles := core.MakeTiles(core.MakeWord("bc"), "xx")
 	boardFunc := func() *core.Board {

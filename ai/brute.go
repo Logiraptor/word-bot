@@ -4,6 +4,23 @@ import (
 	"github.com/Logiraptor/word-bot/core"
 )
 
+type BruteForceGenerator struct {
+	wordDB core.WordList
+}
+
+func NewBrute(wordDB core.WordList) BruteForceGenerator {
+	return BruteForceGenerator{wordDB}
+}
+
+func (b BruteForceGenerator) GenerateMoves(board *core.Board, rack core.Rack, onMove func(core.Turn) bool) {
+	shouldEmit := true
+	BruteForce(board, rack, b.wordDB, func(t core.Turn) {
+		if shouldEmit {
+			shouldEmit = onMove(t)
+		}
+	})
+}
+
 func BruteForce(b *core.Board, rack core.Rack, wordDB core.WordList, callback func(core.Turn)) {
 	dirs := []core.Direction{core.Horizontal, core.Vertical}
 	perms := Permute(rack.Rack)
