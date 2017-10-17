@@ -2,7 +2,6 @@ package ai_test
 
 import (
 	"testing"
-	"unicode"
 
 	"github.com/stretchr/testify/assert"
 
@@ -13,26 +12,6 @@ import (
 )
 
 type MoveGenConstructor func(words []string) ai.MoveGenerator
-
-func tiles(s string) []core.Tile {
-	output := []core.Tile{}
-	for _, l := range s {
-		output = append(output, core.Rune2Letter(unicode.ToLower(l)).ToTile(unicode.IsUpper(l)))
-	}
-	return output
-}
-
-func move(i, j int, dir core.Direction, word string, score core.Score) core.ScoredMove {
-	return core.ScoredMove{
-		PlacedTiles: core.PlacedTiles{
-			Row:       i,
-			Col:       j,
-			Direction: dir,
-			Word:      tiles(word),
-		},
-		Score: score,
-	}
-}
 
 func TestSpeedyMoveGen(t *testing.T) {
 	MoveGeneratorContract(t, func(words []string) ai.MoveGenerator {
@@ -72,11 +51,11 @@ func TestBruteMoveGen(t *testing.T) {
 	})
 }
 
-func collectMoves(board *core.Board, rack core.Rack, moveGen ai.MoveGenerator) []core.ScoredMove {
-	output := []core.ScoredMove{}
+func collectMoves(board *core.Board, rack core.Rack, moveGen ai.MoveGenerator) []core.PlacedTiles {
+	output := []core.PlacedTiles{}
 	moveGen.GenerateMoves(board, rack, func(t core.Turn) bool {
 		if m, ok := t.(core.ScoredMove); ok {
-			output = append(output, m)
+			output = append(output, m.PlacedTiles)
 		}
 		return true
 	})
@@ -84,20 +63,14 @@ func collectMoves(board *core.Board, rack core.Rack, moveGen ai.MoveGenerator) [
 }
 
 func MoveGeneratorContract(t *testing.T, makeMoveGenerator MoveGenConstructor) {
-	words := []string{"cab"}
-	expectedMoves := []core.ScoredMove{
-		move(6, 7, core.Vertical, "cb", 7),
+	for _, tc := range moveGenTestData {
+		ai := makeMoveGenerator(tc.dictionary)
+		board := core.NewBoard()
+		for _, m := range tc.previousMoves {
+			board.PlaceTiles(m)
+		}
+		rack := core.NewConsumableRack(tiles(tc.rack))
+		moves := collectMoves(board, rack, ai)
+		assert.Subset(t, moves, tc.expectedMoves)
 	}
-	rackTiles := core.MakeTiles(core.MakeWord("bc"), "xx")
-	boardFunc := func() *core.Board {
-		b := core.NewBoard()
-		b.PlaceTiles(move(7, 6, core.Horizontal, "cab", 0).PlacedTiles)
-		return b
-	}
-
-	ai := makeMoveGenerator(words)
-	board := boardFunc()
-	rack := core.NewConsumableRack(rackTiles)
-	moves := collectMoves(board, rack, ai)
-	assert.Subset(t, moves, expectedMoves)
 }
