@@ -141,9 +141,6 @@ func dumpTurns(filename string, moves []core.Turn) {
 }
 
 func TestSpeedyMatchesSmarty(t *testing.T) {
-	if testing.Short() {
-		t.Skip("Complete move gen is slow")
-	}
 	tiles := core.NewConsumableRack(core.MakeTiles(core.MakeWord("asdjdha"), "xxxxxx "))
 	board := core.NewBoard()
 
