@@ -188,25 +188,34 @@ func (s *SmartyAI) searchRest(board *core.Board, i, j int, dir core.Direction, r
 			if letter.IsBlank() {
 				for r := blankA; r <= blankZ; r++ {
 					if next, ok := wordDB.CanBranch(r); ok {
-						s.stepForward(board, i, j, r, dir, rack.Consume(index), next, append(prev, r), callback)
+						if s.validateCrossWord(board, i, j, r, !dir) {
+							s.searchRest(board, i+dRow, j+dCol, dir, rack.Consume(index), next, append(prev, r), callback)
+						}
 					}
 				}
 			} else {
 				if next, ok := wordDB.CanBranch(letter); ok {
-					s.stepForward(board, i, j, letter, dir, rack.Consume(index), next, append(prev, letter), callback)
+					if s.validateCrossWord(board, i, j, letter, !dir) {
+						s.searchRest(board, i+dRow, j+dCol, dir, rack.Consume(index), next, append(prev, letter), callback)
+					}
 				}
 			}
 		}
 	}
 }
 
-func (s *SmartyAI) stepForward(board *core.Board, i, j int, placed core.Tile, dir core.Direction, rack core.Rack, wordDB *wordlist.Trie, prev []core.Tile, callback func([]core.Tile)) {
+func (s *SmartyAI) validateCrossWord(board *core.Board, i, j int, placed core.Tile, dir core.Direction) bool {
 	// back up perpendicular to advancing direction until I hit a blank
 	var (
 		ok                 bool
-		perpDRow, perpDCol = (!dir).Offsets()
+		perpDRow, perpDCol = dir.Offsets()
 		perpI, perpJ       = i - perpDRow, j - perpDCol
 	)
+
+	if !board.HasTile(i+perpDRow, j+perpDCol) && !board.HasTile(i-perpDRow, j-perpDCol) {
+		return true
+	}
+
 	for board.HasTile(perpI, perpJ) {
 		perpI -= perpDRow
 		perpJ -= perpDCol
@@ -214,7 +223,6 @@ func (s *SmartyAI) stepForward(board *core.Board, i, j int, placed core.Tile, di
 	// go back to the last tile I was on
 	perpI += perpDRow
 	perpJ += perpDCol
-	startI, startJ := perpI, perpJ
 
 	// validate continuous string of tiles is a word
 	wordRoot := s.searchSpace
@@ -223,11 +231,11 @@ func (s *SmartyAI) stepForward(board *core.Board, i, j int, placed core.Tile, di
 			t := board.Cells[perpI][perpJ].Tile
 			if wordRoot, ok = wordRoot.CanBranch(t); !ok {
 				// This is not a word, bail out
-				return
+				return false
 			}
 		} else if perpI == i && perpJ == j {
 			if wordRoot, ok = wordRoot.CanBranch(placed); !ok {
-				return
+				return false
 			}
 		} else {
 			break
@@ -236,12 +244,6 @@ func (s *SmartyAI) stepForward(board *core.Board, i, j int, placed core.Tile, di
 		perpJ += perpDCol
 	}
 
-	l := (perpI - startI) + (perpJ - startJ)
-
 	// if so, recurse on search
-	if wordRoot.IsTerminal() || l == 1 {
-		dRow, dCol := dir.Offsets()
-		s.searchRest(board, i+dRow, j+dCol, dir, rack, wordDB, prev, callback)
-	}
-	// if not, return
+	return wordRoot.IsTerminal()
 }

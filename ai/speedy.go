@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 
@@ -151,9 +150,6 @@ func (s *SpeedyAI) Name() string {
 
 func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prev []core.Tile, callback func(int, int, []core.Tile, []core.Tile)) {
 	//fmt.Println("CONT: Starting search at ", i, j)
-	if i == 7 && j == 7 {
-		fmt.Print("BANGARANG")
-	}
 	s.searchForward(board, i, j, i, j, dir, rack, wordDB, prev, callback)
 }
 

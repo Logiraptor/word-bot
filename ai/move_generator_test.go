@@ -64,13 +64,15 @@ func collectMoves(board *core.Board, rack core.Rack, moveGen ai.MoveGenerator) [
 
 func MoveGeneratorContract(t *testing.T, makeMoveGenerator MoveGenConstructor) {
 	for _, tc := range moveGenTestData {
-		ai := makeMoveGenerator(tc.dictionary)
-		board := core.NewBoard()
-		for _, m := range tc.previousMoves {
-			board.PlaceTiles(m)
-		}
-		rack := core.NewConsumableRack(tiles(tc.rack))
-		moves := collectMoves(board, rack, ai)
-		assert.Subset(t, moves, tc.expectedMoves)
+		t.Run(tc.name, func(t *testing.T) {
+			ai := makeMoveGenerator(tc.dictionary)
+			board := core.NewBoard()
+			for _, m := range tc.previousMoves {
+				board.PlaceTiles(m)
+			}
+			rack := core.NewConsumableRack(tiles(tc.rack))
+			moves := collectMoves(board, rack, ai)
+			assert.Subset(t, moves, tc.expectedMoves, tc.name)
+		})
 	}
 }

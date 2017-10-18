@@ -24,6 +24,7 @@ func tiles(s string) []core.Tile {
 }
 
 type MoveGenTestCase struct {
+	name          string
 	dictionary    []string
 	previousMoves []core.PlacedTiles
 	rack          string
@@ -32,6 +33,16 @@ type MoveGenTestCase struct {
 
 var moveGenTestData = []MoveGenTestCase{
 	{
+		name:          "first move with one word",
+		dictionary:    []string{"cab"},
+		previousMoves: []core.PlacedTiles{},
+		rack:          "cab",
+		expectedMoves: []core.PlacedTiles{
+			move(6, 7, core.Vertical, "cab"),
+		},
+	},
+	{
+		name:       "vertical crossover",
 		dictionary: []string{"cab"},
 		previousMoves: []core.PlacedTiles{
 			move(7, 6, core.Horizontal, "cab"),
@@ -39,6 +50,40 @@ var moveGenTestData = []MoveGenTestCase{
 		rack: "bc",
 		expectedMoves: []core.PlacedTiles{
 			move(6, 7, core.Vertical, "cb"),
+		},
+	},
+	{
+		name:       "horizontal crossover",
+		dictionary: []string{"cab"},
+		previousMoves: []core.PlacedTiles{
+			move(6, 7, core.Vertical, "cab"),
+		},
+		rack: "bc",
+		expectedMoves: []core.PlacedTiles{
+			move(7, 6, core.Horizontal, "cb"),
+		},
+	},
+	{
+		name:       "line up",
+		dictionary: []string{"cab", "dc", "ea", "fb", "def"},
+		previousMoves: []core.PlacedTiles{
+			move(7, 7, core.Horizontal, "cab"),
+		},
+		rack: "def",
+		expectedMoves: []core.PlacedTiles{
+			move(6, 7, core.Horizontal, "def"),
+		},
+	},
+	{
+		name:       "corner play",
+		dictionary: []string{"abc", "fb", "fd", "edc"},
+		previousMoves: []core.PlacedTiles{
+			move(7, 7, core.Horizontal, "abc"),
+			move(5, 9, core.Vertical, "ed"),
+		},
+		rack: "f",
+		expectedMoves: []core.PlacedTiles{
+			move(6, 8, core.Horizontal, "f"),
 		},
 	},
 }

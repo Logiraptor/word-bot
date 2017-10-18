@@ -370,9 +370,7 @@ func (b *Board) Print() {
 }
 
 func (b *Board) scan(letters []Tile, row, col, dRow, dCol int) []Tile {
-	for col >= 0 && col < 15 &&
-		row >= 0 && row < 15 &&
-		b.HasTile(row, col) {
+	for b.HasTile(row, col) {
 		letters = append(letters, b.Cells[row][col].Tile)
 		row += dRow
 		col += dCol
