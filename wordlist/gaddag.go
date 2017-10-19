@@ -63,3 +63,24 @@ func (g *Gaddag) Reverse() *Gaddag {
 func (g *Gaddag) IsTerminal() bool {
 	return g.terminal
 }
+
+func (g *Gaddag) DumpOptions() []string {
+	output := []string{}
+	for i, n := range g.nodes {
+		if n == nil {
+			continue
+		}
+		r := string(core.Letter(i).ToRune())
+		if i == reverseToken {
+			r = "#"
+		}
+		if n.IsTerminal() {
+			output = append(output, r)
+		}
+		subStrings := n.DumpOptions()
+		for _, s := range subStrings {
+			output = append(subStrings, r+s)
+		}
+	}
+	return output
+}
