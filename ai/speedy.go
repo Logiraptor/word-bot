@@ -158,6 +158,7 @@ func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack 
 
 func (s *SpeedyAI) searchForward(board *core.Board, startI, startJ, row, col int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prev []core.Tile, callback func(int, int, []core.Tile, []core.Tile)) {
 	fmt.Println("CONT: searchForward", row, col, prev)
+	fmt.Println("CONT: With words", wordDB.DumpOptions())
 	if board.OutOfBounds(row, col) {
 		fmt.Println("BAIL: out of bounds")
 		return
@@ -219,6 +220,7 @@ func (s *SpeedyAI) searchForward(board *core.Board, startI, startJ, row, col int
 
 func (s *SpeedyAI) searchBackward(board *core.Board, row, col int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prefix []core.Tile, rest []core.Tile, callback func(int, int, []core.Tile, []core.Tile)) {
 	fmt.Println("CONT: searchBackward", row, col, rest, "#", prefix)
+	fmt.Println("CONT: With words", wordDB.DumpOptions(), rack)
 	dRow, dCol := dir.Offsets()
 	dRow *= -1
 	dCol *= -1
@@ -244,7 +246,8 @@ func (s *SpeedyAI) searchBackward(board *core.Board, row, col int, dir core.Dire
 	}
 
 	for i, letter := range rack.Rack {
-		if !rack.CanConsume(row) {
+		fmt.Println("CONT: attempting to consume rack tile", letter, rack, i, len(rack.Rack))
+		if !rack.CanConsume(i) {
 			continue
 		}
 		if letter.IsBlank() {
@@ -265,11 +268,8 @@ func (s *SpeedyAI) searchBackward(board *core.Board, row, col int, dir core.Dire
 			continue
 		}
 
-		fmt.Println("CONT: attempting to consume rack tile", letter)
 		if !wordDB.CanBranch(letter) {
 			fmt.Println("BAIL: cannot branch on ", letter)
-			fmt.Println("BAIL: wordDB says", wordDB.DumpOptions())
-			fmt.Println("BAIL: DONE")
 			continue
 		}
 		if !s.validateCrossWord(board, row, col, letter, !dir) {

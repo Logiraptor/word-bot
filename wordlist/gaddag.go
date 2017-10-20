@@ -1,6 +1,11 @@
 package wordlist
 
-import "github.com/Logiraptor/word-bot/core"
+import (
+	"fmt"
+	"io"
+
+	"github.com/Logiraptor/word-bot/core"
+)
 
 const reverseToken = ('z' - 'a') + 1
 
@@ -66,6 +71,9 @@ func (g *Gaddag) IsTerminal() bool {
 
 func (g *Gaddag) DumpOptions() []string {
 	output := []string{}
+	if g.IsTerminal() {
+		output = append(output, ".")
+	}
 	for i, n := range g.nodes {
 		if n == nil {
 			continue
@@ -74,13 +82,39 @@ func (g *Gaddag) DumpOptions() []string {
 		if i == reverseToken {
 			r = "#"
 		}
-		if n.IsTerminal() {
-			output = append(output, r)
-		}
 		subStrings := n.DumpOptions()
 		for _, s := range subStrings {
-			output = append(subStrings, r+s)
+			output = append(output, r+s)
 		}
 	}
 	return output
+}
+
+func (g *Gaddag) DumpToDot(wr io.Writer) {
+	fmt.Fprintln(wr, "digraph {")
+	g.dumpToDot(wr)
+	fmt.Fprintln(wr, "}")
+}
+
+func (g *Gaddag) dumpToDot(wr io.Writer) {
+	for i, n := range g.nodes {
+		if n == nil {
+			continue
+		}
+		r := string(core.Letter(i).ToRune())
+		if i == reverseToken {
+			r = "#"
+		}
+
+		color := "white"
+		if n.IsTerminal() {
+			color = "red"
+		} else if n.CanReverse() {
+			color = "blue"
+		}
+
+		fmt.Fprintf(wr, "\"%p\" -> \"%p\" [label=\"%s\"];\n", g, n, r)
+		fmt.Fprintf(wr, "\"%p\" [label=\"%s\" color=\"%s\"];\n", n, "__", color)
+		n.dumpToDot(wr)
+	}
 }

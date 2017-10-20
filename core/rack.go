@@ -15,6 +15,16 @@ func NewConsumableRack(tiles []Tile) Rack {
 	}
 }
 
+func (c Rack) String() string {
+	out := ""
+	for i, r := range c.Rack {
+		if c.CanConsume(i) {
+			out += r.String()
+		}
+	}
+	return out
+}
+
 // Consume uses up a tile in the rack
 func (c Rack) Consume(i int) Rack {
 	return Rack{
