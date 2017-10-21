@@ -1,7 +1,6 @@
 package ai
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/Logiraptor/word-bot/wordlist"
@@ -85,7 +84,7 @@ func (s *SpeedyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 							wg:         wg,
 							wordDB:     s.searchSpace,
 						}
-						fmt.Println("Pursuing", i, j)
+						// fmt.Println("Pursuing", i, j)
 					}
 				}
 			}
@@ -108,7 +107,7 @@ func speedySearchWorker(s *SpeedyAI, jobs <-chan speedyJob) {
 	var tiles = make([]core.Tile, 0, 15)
 	for job := range jobs {
 		s.Search(job.board, job.i, job.j, job.dir, job.rack, job.wordDB, tiles, func(i, j int, reversePrefix, rest []core.Tile) {
-			fmt.Println("RECEIVED:", reversePrefix, rest)
+			// fmt.Println("RECEIVED:", reversePrefix, rest)
 			if len(reversePrefix)+len(rest) == 0 {
 				return
 			}
@@ -130,7 +129,7 @@ func speedySearchWorker(s *SpeedyAI, jobs <-chan speedyJob) {
 				Col:       j,
 				Direction: job.dir,
 			}
-			fmt.Println("RECONSTRUCTED", result)
+			// fmt.Println("RECONSTRUCTED", result)
 			if job.board.ValidateMove(result, s.wordList) {
 				_, canPlay := job.rack.Play(word)
 				if canPlay {
@@ -151,35 +150,36 @@ func (s *SpeedyAI) Name() string {
 }
 
 func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prev []core.Tile, callback func(int, int, []core.Tile, []core.Tile)) {
-	fmt.Println("CONT: Starting search at ", i, j, dir)
-	fmt.Println("CONT: With words", wordDB.DumpOptions())
+	// fmt.Println("CONT: Starting search at ", i, j, dir)
+	// fmt.Println("CONT: With words", wordDB.DumpOptions())
 	s.searchForward(board, i, j, i, j, dir, rack, wordDB, prev, callback)
 }
 
 func (s *SpeedyAI) searchForward(board *core.Board, startI, startJ, row, col int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prev []core.Tile, callback func(int, int, []core.Tile, []core.Tile)) {
-	fmt.Println("CONT: searchForward", row, col, prev)
-	fmt.Println("CONT: With words", wordDB.DumpOptions())
-	if board.OutOfBounds(row, col) {
-		fmt.Println("BAIL: out of bounds")
-		return
-	}
+	// fmt.Println("CONT: searchForward", row, col, prev)
+	// fmt.Println("CONT: With words", wordDB.DumpOptions())
 
 	dRow, dCol := dir.Offsets()
 	if board.HasTile(row, col) {
-		fmt.Println("CONT: Attempting to consume board tile")
+		// fmt.Println("CONT: Attempting to consume board tile")
 		letter := board.Cells[row][col].Tile
 		if !wordDB.CanBranch(letter) {
-			fmt.Println("BAIL: cannot branch on board tile")
+			// fmt.Println("BAIL: cannot branch on board tile")
 			return
 		}
-		fmt.Println("CONT: consuming board tile", letter)
+		// fmt.Println("CONT: consuming board tile", letter)
 		s.searchForward(board, startI, startJ, row+dRow, col+dCol, dir, rack, wordDB.Branch(letter), prev, callback)
 		return
 	}
 
 	if wordDB.CanReverse() {
-		fmt.Println("CONT: can reverse, walking backwards from ", startI-dRow, startJ-dCol)
+		// fmt.Println("CONT: can reverse, walking backwards from ", startI-dRow, startJ-dCol)
 		s.searchBackward(board, startI-dRow, startJ-dCol, dir, rack, wordDB.Reverse(), nil, prev, callback)
+	}
+
+	if board.OutOfBounds(row, col) {
+		// fmt.Println("BAIL: out of bounds")
+		return
 	}
 
 	for i, letter := range rack.Rack {
@@ -187,15 +187,15 @@ func (s *SpeedyAI) searchForward(board *core.Board, startI, startJ, row, col int
 			continue
 		}
 		if letter.IsBlank() {
-			fmt.Println("CONT: attempting to consume blank from rack")
+			// fmt.Println("CONT: attempting to consume blank from rack")
 			for r := blankA; r <= blankZ; r++ {
-				fmt.Println("CONT: assigning blank as", r)
+				// fmt.Println("CONT: assigning blank as", r)
 				if !wordDB.CanBranch(r) {
-					fmt.Println("BAIL: Cannot branch on", r)
+					// fmt.Println("BAIL: Cannot branch on", r)
 					continue
 				}
 				if !s.validateCrossWord(board, row, col, r, !dir) {
-					fmt.Println("BAIL: cross word is not valid")
+					// fmt.Println("BAIL: cross word is not valid")
 					continue
 				}
 				s.searchForward(board, startI, startJ, row+dRow, col+dCol, dir, rack.Consume(i), wordDB.Branch(r), append(prev, r), callback)
@@ -203,14 +203,14 @@ func (s *SpeedyAI) searchForward(board *core.Board, startI, startJ, row, col int
 			continue
 		}
 
-		fmt.Println("CONT: consuming rack tile", letter)
+		// fmt.Println("CONT: consuming rack tile", letter)
 
 		if !wordDB.CanBranch(letter) {
-			fmt.Println("BAIL: cannot branch on rack tile", letter)
+			// fmt.Println("BAIL: cannot branch on rack tile", letter)
 			continue
 		}
 		if !s.validateCrossWord(board, row, col, letter, !dir) {
-			fmt.Println("BAIL: cross word is invalid")
+			// fmt.Println("BAIL: cross word is invalid")
 			continue
 		}
 
@@ -219,65 +219,65 @@ func (s *SpeedyAI) searchForward(board *core.Board, startI, startJ, row, col int
 }
 
 func (s *SpeedyAI) searchBackward(board *core.Board, row, col int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prefix []core.Tile, rest []core.Tile, callback func(int, int, []core.Tile, []core.Tile)) {
-	fmt.Println("CONT: searchBackward", row, col, rest, "#", prefix)
-	fmt.Println("CONT: With words", wordDB.DumpOptions(), rack)
+	// fmt.Println("CONT: searchBackward", row, col, rest, "#", prefix)
+	// fmt.Println("CONT: With words", wordDB.DumpOptions(), rack)
 	dRow, dCol := dir.Offsets()
 	dRow *= -1
 	dCol *= -1
 
 	if board.HasTile(row, col) {
-		fmt.Println("BACK: attempting to consume board tile")
+		// fmt.Println("BACK: attempting to consume board tile")
 		letter := board.Cells[row][col].Tile
 		if !wordDB.CanBranch(letter) {
-			fmt.Println("BAIL: cannot branch on board tile", letter)
+			// fmt.Println("BAIL: cannot branch on board tile", letter)
 			return
 		}
-		fmt.Println("CONT: consuming board tile", letter)
+		// fmt.Println("CONT: consuming board tile", letter)
 		s.searchBackward(board, row+dRow, col+dCol, dir, rack, wordDB.Branch(letter), prefix, rest, callback)
 		return
 	}
 	if wordDB.IsTerminal() {
-		fmt.Println("TERM: ", row, col, prefix, rest)
+		// fmt.Println("TERM: ", row, col, prefix, rest)
 		callback(row-dRow, col-dCol, prefix, rest)
 	}
 	if board.OutOfBounds(row, col) {
-		fmt.Println("BAIL: out of bounds")
+		// fmt.Println("BAIL: out of bounds")
 		return
 	}
 
 	for i, letter := range rack.Rack {
-		fmt.Println("CONT: attempting to consume rack tile", letter, rack, i, len(rack.Rack))
+		// fmt.Println("CONT: attempting to consume rack tile", letter, rack, i, len(rack.Rack))
 		if !rack.CanConsume(i) {
 			continue
 		}
 		if letter.IsBlank() {
-			fmt.Println("CONT: attempting to consume blank from rack")
+			// fmt.Println("CONT: attempting to consume blank from rack")
 			for r := blankA; r <= blankZ; r++ {
-				fmt.Println("CONT: attempting to assign blank to", r)
+				// fmt.Println("CONT: attempting to assign blank to", r)
 				if !wordDB.CanBranch(r) {
-					fmt.Println("BAIL: cannot branch on ", r)
+					// fmt.Println("BAIL: cannot branch on ", r)
 					continue
 				}
 				if !s.validateCrossWord(board, row, col, r, !dir) {
-					fmt.Println("BAIL: cross word is invalid")
+					// fmt.Println("BAIL: cross word is invalid")
 					continue
 				}
-				fmt.Println("CONT: assigning blank to ", r)
+				// fmt.Println("CONT: assigning blank to ", r)
 				s.searchBackward(board, row+dRow, col+dCol, dir, rack.Consume(i), wordDB.Branch(r), append(prefix, r), rest, callback)
 			}
 			continue
 		}
 
 		if !wordDB.CanBranch(letter) {
-			fmt.Println("BAIL: cannot branch on ", letter)
+			// fmt.Println("BAIL: cannot branch on ", letter)
 			continue
 		}
 		if !s.validateCrossWord(board, row, col, letter, !dir) {
-			fmt.Println("BAIL: cross word is invalid")
+			// fmt.Println("BAIL: cross word is invalid")
 			continue
 		}
 
-		fmt.Println("CONT: consuming rack tile ", letter)
+		// fmt.Println("CONT: consuming rack tile ", letter)
 		s.searchBackward(board, row+dRow, col+dCol, dir, rack.Consume(i), wordDB.Branch(letter), append(prefix, letter), rest, callback)
 	}
 }

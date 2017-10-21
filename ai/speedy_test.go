@@ -37,6 +37,19 @@ func filter(scoredMoves []core.Turn, pred func(core.ScoredMove) bool) []core.Sco
 	return output
 }
 
+func normalize(board *core.Board, turns []core.Turn) []core.Turn {
+	output := []core.Turn{}
+	for i := range turns {
+		if m, ok := turns[i].(core.ScoredMove); ok {
+			output = append(output, core.ScoredMove{
+				PlacedTiles: board.NormalizeMove(m.PlacedTiles),
+				Score:       m.Score,
+			})
+		}
+	}
+	return output
+}
+
 func unique(turns []core.Turn) []core.Turn {
 	output := []core.Turn{}
 outer:
@@ -164,11 +177,14 @@ func TestSpeedyMatchesSmarty(t *testing.T) {
 		return true
 	})
 
-	speedyMoves = unique(speedyMoves)
-	smartyMoves = unique(smartyMoves)
+	speedyMoves = unique(normalize(board, speedyMoves))
+	smartyMoves = unique(normalize(board, smartyMoves))
 
-	assert.Subset(t, speedyMoves, smartyMoves)
-	assert.Subset(t, smartyMoves, speedyMoves)
+	if !assert.Subset(t, speedyMoves, smartyMoves) {
+		fmt.Println("Missing moves:", filter(smartyMoves, func(m core.ScoredMove) bool {
+			return !contains(speedyMoves, m)
+		}))
+	}
 	if !assert.Equal(t, len(smartyMoves), len(speedyMoves)) {
 		compareSets(board, "smarty", "speedy", smartyMoves, speedyMoves)
 	}

@@ -88,7 +88,7 @@ var moveGenTestData = []MoveGenTestCase{
 	},
 	{
 		name:       "spot check 1",
-		dictionary: []string{"shaded", "doggo", "oar"},
+		dictionary: []string{"shaded", "doggo", "oar", "ag", "so", "ashed", "oars"},
 		previousMoves: []core.PlacedTiles{
 			move(7, 7, core.Horizontal, "doggo"),
 			move(7, 8, core.Vertical, "ar"),
@@ -96,6 +96,8 @@ var moveGenTestData = []MoveGenTestCase{
 		rack: "shade",
 		expectedMoves: []core.PlacedTiles{
 			move(2, 7, core.Vertical, "shade"),
+			move(6, 10, core.Horizontal, "ashed"),
+			move(10, 8, core.Vertical, "s"),
 		},
 	},
 }

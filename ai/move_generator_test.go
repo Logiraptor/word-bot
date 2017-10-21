@@ -55,7 +55,7 @@ func collectMoves(board *core.Board, rack core.Rack, moveGen ai.MoveGenerator) [
 	output := []core.PlacedTiles{}
 	moveGen.GenerateMoves(board, rack, func(t core.Turn) bool {
 		if m, ok := t.(core.ScoredMove); ok {
-			output = append(output, m.PlacedTiles)
+			output = append(output, board.NormalizeMove(m.PlacedTiles))
 		}
 		return true
 	})

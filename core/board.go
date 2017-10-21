@@ -337,6 +337,21 @@ func (b *Board) PlaceTiles(move PlacedTiles) []Tile {
 	return move.Word
 }
 
+func (b *Board) NormalizeMove(move PlacedTiles) PlacedTiles {
+	dRow, dCol := move.Direction.Offsets()
+	i, j := move.Row, move.Col
+	for b.HasTile(i, j) {
+		i += dRow
+		j += dCol
+	}
+	return PlacedTiles{
+		Row:       i,
+		Col:       j,
+		Direction: move.Direction,
+		Word:      move.Word,
+	}
+}
+
 // Print prints the board to the console
 func (b *Board) Print() {
 	for i, row := range b.Cells {
