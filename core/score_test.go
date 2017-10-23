@@ -17,10 +17,23 @@ func wordEqual(aStr string, bWord Word) bool {
 	return reflect.DeepEqual(aWord, bWord)
 }
 
-type fakeWordList struct{}
+type testWordList struct {
+	words []string
+}
 
-func (fakeWordList) Contains(word Word) bool {
-	words := []string{
+func (testWordList) Contains(word Word) bool {
+	words := []string{}
+
+	for _, x := range words {
+		if wordEqual(x, word) {
+			return true
+		}
+	}
+	return false
+}
+
+var fakeWordList = testWordList{
+	words: []string{
 		"alfresco",
 		"rave",
 		"oh",
@@ -30,14 +43,7 @@ func (fakeWordList) Contains(word Word) bool {
 		"stones",
 		"tabarded",
 		"to",
-	}
-
-	for _, x := range words {
-		if wordEqual(x, word) {
-			return true
-		}
-	}
-	return false
+	},
 }
 
 func assertScore(t *testing.T, b *Board, score Score, word []Tile, row, col int, dir Direction) {
@@ -99,37 +105,37 @@ func TestConversions(t *testing.T) {
 
 func TestValidation(t *testing.T) {
 	b := NewBoard()
-	result := b.ValidateMove(PlacedTiles{toTiles("dugz"), 7, 7, Horizontal}, fakeWordList{})
+	result := b.ValidateMove(PlacedTiles{toTiles("dugz"), 7, 7, Horizontal}, fakeWordList)
 	assert.Equal(t, false, result)
 }
 
 func TestMultiValidationSuccess(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(PlacedTiles{toTiles("handy"), 7, 7, Horizontal})
-	result := b.ValidateMove(PlacedTiles{toTiles("stone"), 6, 5, Horizontal}, fakeWordList{})
+	result := b.ValidateMove(PlacedTiles{toTiles("stone"), 6, 5, Horizontal}, fakeWordList)
 	assert.Equal(t, true, result)
 }
 
 func TestMultiValidation(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(PlacedTiles{toTiles("handy"), 7, 7, Horizontal})
-	result := b.ValidateMove(PlacedTiles{toTiles("stones"), 6, 5, Horizontal}, fakeWordList{})
+	result := b.ValidateMove(PlacedTiles{toTiles("stones"), 6, 5, Horizontal}, fakeWordList)
 	assert.Equal(t, false, result)
 }
 
 func TestValidationDanglingWords(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(PlacedTiles{toTiles("handy"), 7, 7, Horizontal})
-	result := b.ValidateMove(PlacedTiles{toTiles("stones"), 5, 5, Horizontal}, fakeWordList{})
+	result := b.ValidateMove(PlacedTiles{toTiles("stones"), 5, 5, Horizontal}, fakeWordList)
 	assert.Equal(t, false, result)
 }
 
 func TestValidationOverflowingWords(t *testing.T) {
 	b := NewBoard()
-	x := b.ValidateMove(PlacedTiles{toTiles("alfresco"), 7, 7, Horizontal}, fakeWordList{})
+	x := b.ValidateMove(PlacedTiles{toTiles("alfresco"), 7, 7, Horizontal}, fakeWordList)
 	assert.Equal(t, true, x)
 	b.PlaceTiles(PlacedTiles{toTiles("alfresco"), 7, 7, Horizontal})
-	result := b.ValidateMove(PlacedTiles{toTiles("tabarded"), 6, 14, Horizontal}, fakeWordList{})
+	result := b.ValidateMove(PlacedTiles{toTiles("tabarded"), 6, 14, Horizontal}, fakeWordList)
 	if !assert.Equal(t, false, result) {
 		b.Print()
 	}
@@ -140,7 +146,7 @@ func TestValidationOverflowingWords(t *testing.T) {
 func TestJint(t *testing.T) {
 	b := NewBoard()
 	b.PlaceTiles(PlacedTiles{toTiles("tusseh"), 14, 0, Horizontal})
-	result := b.ValidateMove(PlacedTiles{toTiles("jin"), 11, 0, Vertical}, fakeWordList{})
+	result := b.ValidateMove(PlacedTiles{toTiles("jin"), 11, 0, Vertical}, fakeWordList)
 	assert.False(t, result)
 }
 
@@ -151,7 +157,7 @@ func TestBridgingWords(t *testing.T) {
 	b.PlaceTiles(PlacedTiles{toTiles("oard"), 7, 7, Vertical})
 	b.PlaceTiles(PlacedTiles{toTiles("ravel"), 7, 9, Vertical})
 
-	result := b.ValidateMove(PlacedTiles{toTiles("ae"), 10, 7, Horizontal}, fakeWordList{})
+	result := b.ValidateMove(PlacedTiles{toTiles("ae"), 10, 7, Horizontal}, fakeWordList)
 	assert.True(t, result)
 
 	words := b.FindNewWords(PlacedTiles{toTiles("ae"), 10, 7, Horizontal})

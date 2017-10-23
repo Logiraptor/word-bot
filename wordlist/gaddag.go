@@ -23,6 +23,7 @@ func (g *Gaddag) AddWord(word string) {
 	for i := range contents {
 		g.insertLinearString(contents[:i], contents[i:])
 	}
+	g.insertLinearString(contents, nil)
 }
 
 func (g *Gaddag) insertLinearString(start, end []rune) {
