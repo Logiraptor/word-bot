@@ -36,13 +36,14 @@ func NewSpeedyAI(wordList core.WordList, searchSpace *wordlist.Gaddag) *SpeedyAI
 }
 
 type speedyJob struct {
-	i, j       int
-	board      *core.Board
-	dir        core.Direction
-	rack       core.Rack
-	wordDB     *wordlist.Gaddag
-	resultChan chan<- core.PlacedTiles
-	wg         *sync.WaitGroup
+	i, j             int
+	board            *core.Board
+	boardConstraints [15][15]Constraint
+	dir              core.Direction
+	rack             core.Rack
+	wordDB           *wordlist.Gaddag
+	resultChan       chan<- core.PlacedTiles
+	wg               *sync.WaitGroup
 }
 
 func (s *SpeedyAI) FindMove(b *core.Board, bag core.Bag, rack core.Rack, callback func(core.Turn) bool) {
@@ -66,6 +67,13 @@ func (s *SpeedyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 
 	results := make(chan core.PlacedTiles, 10)
 
+	var boardConstraint [15][15]Constraint
+	for i := 0; i < 15; i++ {
+		for j := 0; j < 15; j++ {
+			boardConstraint[i][j] = PermittedTiles(b, s.searchSpace, i, j)
+		}
+	}
+
 	go func() {
 		for i := 0; i < 15; i++ {
 			for j := 0; j < 15; j++ {
@@ -76,14 +84,15 @@ func (s *SpeedyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 						b.HasTile(i+1, j) || b.HasTile(i, j+1)) {
 						wg.Add(1)
 						s.jobs <- speedyJob{
-							board:      b,
-							i:          i,
-							j:          j,
-							dir:        dir,
-							rack:       rack,
-							resultChan: results,
-							wg:         wg,
-							wordDB:     s.searchSpace,
+							board:            b,
+							boardConstraints: boardConstraint,
+							i:                i,
+							j:                j,
+							dir:              dir,
+							rack:             rack,
+							resultChan:       results,
+							wg:               wg,
+							wordDB:           s.searchSpace,
 						}
 						// fmt.Println("Pursuing", i, j)
 					}
@@ -107,7 +116,7 @@ func (s *SpeedyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 func speedySearchWorker(s *SpeedyAI, jobs <-chan speedyJob) {
 	var tiles = make([]core.Tile, 0, 15)
 	for job := range jobs {
-		s.Search(job.board, job.i, job.j, job.dir, job.rack, job.wordDB, tiles, func(i, j int, reversePrefix, rest []core.Tile) {
+		s.Search(job.board, job.boardConstraints, job.i, job.j, job.dir, job.rack, job.wordDB, tiles, func(i, j int, reversePrefix, rest []core.Tile) {
 			// fmt.Println("RECEIVED:", reversePrefix, rest)
 			if len(reversePrefix)+len(rest) == 0 {
 				return
@@ -150,15 +159,9 @@ func (s *SpeedyAI) Name() string {
 	return "Speedy"
 }
 
-func (s *SpeedyAI) Search(board *core.Board, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prev []core.Tile, callback func(int, int, []core.Tile, []core.Tile)) {
+func (s *SpeedyAI) Search(board *core.Board, boardConstraint [15][15]Constraint, i, j int, dir core.Direction, rack core.Rack, wordDB *wordlist.Gaddag, prev []core.Tile, callback func(int, int, []core.Tile, []core.Tile)) {
 	// fmt.Println("CONT: Starting search at ", i, j, dir)
 	// fmt.Println("CONT: With words", wordDB.DumpOptions())
-	var boardConstraint [15][15]Constraint
-	for i := 0; i < 15; i++ {
-		for j := 0; j < 15; j++ {
-			boardConstraint[i][j] = PermittedTiles(board, wordDB, i, j)
-		}
-	}
 	s.searchForward(board, boardConstraint, i, j, i, j, dir, rack, wordDB, prev, callback)
 }
 
@@ -284,3 +287,13 @@ func (s *SpeedyAI) searchBackward(board *core.Board, boardConstraint [15][15]Con
 		s.searchBackward(board, boardConstraint, row+dRow, col+dCol, dir, rack.Consume(i), wordDB.Branch(letter), append(prefix, letter), rest, callback)
 	}
 }
+
+// for each square on the board:
+//   if square is an anchor:
+//     if terminal, trigger callback
+//     if oob, bail
+//     for each unconsumed tile in rack:
+//     attempt to play
+//       gaddag can branch
+//       board cross-word constraints allow the tile
+//       recurse on each unconsumed tile at position++

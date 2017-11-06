@@ -216,8 +216,15 @@ func BenchmarkSpeedySearch(b *testing.B) {
 	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal})
 	prev := []core.Tile{}
 
+	var boardConstraint [15][15]ai.Constraint
+	for i := 0; i < 15; i++ {
+		for j := 0; j < 15; j++ {
+			boardConstraint[i][j] = ai.PermittedTiles(board, wordGaddag, i, j)
+		}
+	}
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		speedy.Search(board, 8, 8, core.Horizontal, rack, wordGaddag, prev, func(int, int, []core.Tile, []core.Tile) {})
+		speedy.Search(board, boardConstraint, 8, 8, core.Horizontal, rack, wordGaddag, prev, func(int, int, []core.Tile, []core.Tile) {})
 	}
 }
