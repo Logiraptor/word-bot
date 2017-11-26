@@ -9,3 +9,6 @@ word-bot
 ai-showdown
 *.db
 *.csv
+output
+debug
+test-harness
