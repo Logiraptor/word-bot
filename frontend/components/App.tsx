@@ -4,68 +4,56 @@ import { Board, Move, Tile } from "../models/core";
 import { GameService, StorageService } from "../services/game";
 import { BoardView } from "./BoardView";
 import { RackInput } from "./RackInput";
+import { Store, Dispatch } from "redux";
+import { AppStore, Action, updateMove, deleteMove, addMove, setRack, DefaultState } from "../models/store";
 
 export interface State {
-    moves: Move[];
-    scores: number[];
-    rack: Tile[];
-    board: Board;
+    store: AppStore;
 }
 
-export class App extends React.Component<{ gameService: GameService; storage: StorageService }, State> {
-    constructor(props) {
-        super();
+interface Props {
+    store: Store<AppStore>;
+    gameService: GameService;
+    storage: StorageService;
+}
 
+export class App extends React.Component<Props, State> {
+    constructor(props: Props) {
+        super(props);
         this.state = {
-            moves: [],
-            rack: [],
-            board: Array(15).map(() => Array(15).map(() => null)),
-            scores: [],
+            store: DefaultState,
         };
     }
 
-    async componentDidMount() {
-        let moves = await this.props.storage.load();
-        this.setState({ moves });
-    }
-
-    componentDidUpdate(_, prevState: State) {
-        if (this.state.moves !== prevState.moves) {
-            this.props.storage.save(this.state.moves);
-            this.props.gameService.render({ moves: this.state.moves, rack: this.state.rack }).then((resp) => {
-                this.setState({
-                    board: resp.Board,
-                    scores: resp.Scores,
-                });
+    componentDidMount() {
+        this.props.store.subscribe(() => {
+            this.setState({
+                store: this.props.store.getState(),
             });
-
-            if (this.state.moves.length === 0) {
-                this.setState({ moves: [ newMove([]) ] });
-            }
-        }
+        });
     }
 
     render() {
+        const { store } = this.state;
         return (
             <div>
-                <BoardView tiles={this.state.board} />
+                <BoardView tiles={store.board} />
                 <div className="right-panel">
                     <MovePanel
-                        moves={this.state.moves}
-                        scores={this.state.scores}
-                        changeMoves={(moves) => {
-                            this.setState({ moves });
-                        }}
+                        dispatch={this.props.store.dispatch}
+                        moves={store.moves}
+                        scores={store.scores}
                         service={this.props.gameService}
                     />
-                    <ScoreBoard moves={this.state.moves} scores={this.state.scores} />
+                    <ScoreBoard moves={store.moves} scores={store.scores} />
                     <div className="player-rack">
                         <RackInput
-                            Tiles={this.state.rack}
+                            Tiles={store.rack}
                             onChange={(tiles) => {
-                                this.setState({
-                                    rack: tiles,
-                                });
+                                this.props.store.dispatch(setRack(tiles));
+                                // this.setState({
+                                //     rack: tiles,
+                                // });
                             }}
                             onMove={(row, col) => {}}
                             onFlip={() => {}}
@@ -74,19 +62,17 @@ export class App extends React.Component<{ gameService: GameService; storage: St
                             player={undefined}
                             onSubmit={async () => {
                                 let resp: Move = await this.props.gameService.play({
-                                    moves: this.state.moves,
-                                    rack: this.state.rack,
+                                    moves: store.moves,
+                                    rack: store.rack,
                                 });
 
-                                let newRack = removeFromRack(this.state.rack, resp.tiles);
-
-                                this.setState({
-                                    moves: [
-                                        ...this.state.moves,
-                                        { ...resp, player: getOtherPlayer(this.state.moves) },
-                                    ],
-                                    rack: newRack,
-                                });
+                                let newRack = removeFromRack(store.rack, resp.tiles);
+                                this.props.store.dispatch(addMove({ ...resp, player: getOtherPlayer(store.moves) }));
+                                this.props.store.dispatch(setRack(newRack));
+                                // this.setState({
+                                //     moves: [ ...store.moves,  ],
+                                //     rack: newRack,
+                                // });
                             }}
                         />
                     </div>
@@ -128,10 +114,11 @@ class ScoreBoard extends React.Component<{ moves: Move[]; scores: number[] }> {
         );
     }
 }
+
 interface MovePanelProps {
+    dispatch: Dispatch<Action>;
     moves: Move[];
     scores: number[];
-    changeMoves: (m: Move[]) => void;
     service: GameService;
 }
 
@@ -160,10 +147,14 @@ class MovePanel extends React.Component<MovePanelProps, { valid: boolean[] }> {
 
     renderMove = (move: Move, i: number) => {
         const changeMove = (f: (move: Move) => void) => {
-            let moves = [ ...this.props.moves ];
-            moves[i] = { ...move };
-            f(moves[i]);
-            this.props.changeMoves(moves);
+            // let moves = [ ...this.props.moves ];
+            // moves[i] = { ...move };
+            // f(moves[i]);
+            // this.props.changeMoves(moves);
+
+            const newMove = { ...move };
+            f(newMove);
+            this.props.dispatch(updateMove(newMove, i));
         };
 
         return (
@@ -187,9 +178,11 @@ class MovePanel extends React.Component<MovePanelProps, { valid: boolean[] }> {
                         });
                     }}
                     onDelete={() => {
-                        let newMoves = [ ...this.props.moves ];
-                        newMoves.splice(i, 1);
-                        this.props.changeMoves(newMoves);
+                        this.props.dispatch(deleteMove(i));
+                        // let newMoves = [ ...this.props.moves ];
+                        // newMoves.splice(i, 1);
+
+                        // this.props.changeMoves(newMoves);
                     }}
                     player={move.player}
                     onChangePlayer={(player) => {
@@ -198,7 +191,8 @@ class MovePanel extends React.Component<MovePanelProps, { valid: boolean[] }> {
                         });
                     }}
                     onSubmit={() => {
-                        this.props.changeMoves([ ...this.props.moves, newMove(this.props.moves) ]);
+                        this.props.dispatch(addMove(newMove(this.props.moves)));
+                        // this.props.changeMoves([ ...this.props.moves, newMove(this.props.moves) ]);
                     }}
                 />
             </div>
