@@ -1,5 +1,6 @@
-import { createStore } from "redux";
+import { createStore, Store } from "redux";
 import { Tile, Move, Board } from "./core";
+import { GameService } from "../services/game";
 
 export interface AppStore {
     moves: Move[];
@@ -29,7 +30,13 @@ export interface AddMove {
     value: Move;
 }
 
-export type Action = SetRack | UpdateMove | DeleteMove | AddMove;
+export interface UpdateBoard {
+    type: "updateboard";
+    board: Board;
+    scores: number[];
+}
+
+export type Action = SetRack | UpdateMove | DeleteMove | AddMove | UpdateBoard;
 
 export function setRack(value: Tile[]): SetRack {
     return {
@@ -60,6 +67,14 @@ export function updateMove(value: Move, index: number): UpdateMove {
     };
 }
 
+export function updateBoard(board: Board, scores: number[]): UpdateBoard {
+    return {
+        type: "updateboard",
+        board,
+        scores,
+    };
+}
+
 export const DefaultState = {
     moves: [],
     rack: [],
@@ -71,19 +86,56 @@ export function reducer(state: AppStore | undefined, action: Action): AppStore {
     if (!state) {
         return DefaultState;
     }
+    state = { ...state };
     switch (action.type) {
         case "addmove":
+            state.moves = [ ...state.moves, action.value ];
             return state;
         case "deletemove":
+            state.moves = [ ...state.moves ];
+            state.moves.splice(action.index, 1);
             return state;
         case "setrack":
+            state.rack = action.value;
             return state;
         case "updatemove":
+            state.moves = [ ...state.moves ];
+            state.moves[action.index] = action.value;
+            return state;
+        case "updateboard":
+            state.board = action.board;
+            state.scores = action.scores;
             return state;
     }
 }
 
+export function setupSubscriptions(store: Store<AppStore>, gameService: GameService) {
+    let moves = [];
+    store.subscribe(async () => {
+        const state = store.getState();
+        if (state.moves !== moves) {
+            moves = state.moves;
+            const board = await gameService.render({
+                moves: state.moves,
+                rack: state.rack,
+            });
+            console.log(board.Board);
+            store.dispatch(updateBoard(board.Board, board.Scores));
+        }
+
+        if (state.moves.length === 0) {
+            store.dispatch(
+                addMove({
+                    tiles: [],
+                    row: 0,
+                    col: 0,
+                    player: undefined,
+                    direction: "horizontal",
+                }),
+            );
+        }
+    });
+}
+
 // TODO: persist moves on change
-// TODO: re-render board when moves change
-// TODO: make sure there's always at least one move
 // TODO: load moves from localstorage on app boot
