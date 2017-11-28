@@ -13,6 +13,8 @@ export interface Move {
     col: number;
     player: number;
     direction: "horizontal" | "vertical";
+    score?: number;
+    valid?: boolean;
 }
 
 export interface MoveRequest {

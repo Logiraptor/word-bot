@@ -42,18 +42,14 @@ export class App extends React.Component<Props, State> {
                     <MovePanel
                         dispatch={this.props.store.dispatch}
                         moves={store.moves}
-                        scores={store.scores}
                         service={this.props.gameService}
                     />
-                    <ScoreBoard moves={store.moves} scores={store.scores} />
+                    <ScoreBoard moves={store.moves} scores={store.moves.map((x) => x.score)} />
                     <div className="player-rack">
                         <RackInput
                             Tiles={store.rack}
                             onChange={(tiles) => {
                                 this.props.store.dispatch(setRack(tiles));
-                                // this.setState({
-                                //     rack: tiles,
-                                // });
                             }}
                             onMove={(row, col) => {}}
                             onFlip={() => {}}
@@ -69,10 +65,6 @@ export class App extends React.Component<Props, State> {
                                 let newRack = removeFromRack(store.rack, resp.tiles);
                                 this.props.store.dispatch(addMove({ ...resp, player: getOtherPlayer(store.moves) }));
                                 this.props.store.dispatch(setRack(newRack));
-                                // this.setState({
-                                //     moves: [ ...store.moves,  ],
-                                //     rack: newRack,
-                                // });
                             }}
                         />
                     </div>
@@ -118,49 +110,21 @@ class ScoreBoard extends React.Component<{ moves: Move[]; scores: number[] }> {
 interface MovePanelProps {
     dispatch: Dispatch<Action>;
     moves: Move[];
-    scores: number[];
     service: GameService;
 }
 
-class MovePanel extends React.Component<MovePanelProps, { valid: boolean[] }> {
-    state = {
-        valid: [],
-    };
-
-    componentDidMount() {
-        this.revalidate();
-    }
-
-    componentDidUpdate(prevProps: MovePanelProps) {
-        if (this.props.moves != prevProps.moves) {
-            this.revalidate();
-        }
-    }
-
-    async revalidate() {
-        let valid = await this.props.service.validate({
-            moves: this.props.moves,
-            rack: [],
-        });
-        this.setState({ valid });
-    }
-
+class MovePanel extends React.Component<MovePanelProps> {
     renderMove = (move: Move, i: number) => {
         const changeMove = (f: (move: Move) => void) => {
-            // let moves = [ ...this.props.moves ];
-            // moves[i] = { ...move };
-            // f(moves[i]);
-            // this.props.changeMoves(moves);
-
             const newMove = { ...move };
             f(newMove);
             this.props.dispatch(updateMove(newMove, i));
         };
 
         return (
-            <div className={!this.state.valid[i] ? "move-panel-move error-icon" : "move-panel-move"} key={i}>
+            <div className={move.valid === false ? "move-panel-move error-icon" : "move-panel-move"} key={i}>
                 <RackInput
-                    score={this.props.scores[i]}
+                    score={move.score}
                     mini
                     Tiles={move.tiles}
                     onChange={(tiles) => {
@@ -179,10 +143,6 @@ class MovePanel extends React.Component<MovePanelProps, { valid: boolean[] }> {
                     }}
                     onDelete={() => {
                         this.props.dispatch(deleteMove(i));
-                        // let newMoves = [ ...this.props.moves ];
-                        // newMoves.splice(i, 1);
-
-                        // this.props.changeMoves(newMoves);
                     }}
                     player={move.player}
                     onChangePlayer={(player) => {
@@ -192,7 +152,6 @@ class MovePanel extends React.Component<MovePanelProps, { valid: boolean[] }> {
                     }}
                     onSubmit={() => {
                         this.props.dispatch(addMove(newMove(this.props.moves)));
-                        // this.props.changeMoves([ ...this.props.moves, newMove(this.props.moves) ]);
                     }}
                 />
             </div>

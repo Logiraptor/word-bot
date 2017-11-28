@@ -6,13 +6,14 @@ import * as ReactDOM from "react-dom";
 
 import { App } from "./components/App";
 import { GameService, StorageService } from "./services/game";
-import { createStore } from "redux";
-import { AppStore, reducer, setupSubscriptions, setRack } from "./models/store";
+import { createStore, applyMiddleware } from "redux";
+import { AppStore, setRack, AppState } from "./models/store";
 
-const store = createStore<AppStore>(reducer);
 const gameService: GameService = new GameService();
 const storageService: StorageService = new StorageService();
-setupSubscriptions(store, gameService);
+const appstate = new AppState(gameService);
+
+const store = appstate.createStore();
 store.dispatch(setRack([]));
 let app = document.createElement("div");
 document.body.appendChild(app);
