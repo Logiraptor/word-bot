@@ -75,8 +75,16 @@ export function updateBoard(board: Board, scores: number[]): UpdateBoard {
     };
 }
 
+export const EmptyMove: Move = {
+    tiles: [],
+    row: 0,
+    col: 0,
+    player: undefined,
+    direction: "horizontal",
+};
+
 export const DefaultState = {
-    moves: [],
+    moves: [ EmptyMove ],
     rack: [],
     board: Array(15).map(() => Array(15).map(() => null)),
     scores: [],
@@ -94,6 +102,9 @@ export function reducer(state: AppStore | undefined, action: Action): AppStore {
         case "deletemove":
             state.moves = [ ...state.moves ];
             state.moves.splice(action.index, 1);
+            if (state.moves.length === 0) {
+                state.moves.push(EmptyMove);
+            }
             return state;
         case "setrack":
             state.rack = action.value;
@@ -121,18 +132,6 @@ export function setupSubscriptions(store: Store<AppStore>, gameService: GameServ
             });
             console.log(board.Board);
             store.dispatch(updateBoard(board.Board, board.Scores));
-        }
-
-        if (state.moves.length === 0) {
-            store.dispatch(
-                addMove({
-                    tiles: [],
-                    row: 0,
-                    col: 0,
-                    player: undefined,
-                    direction: "horizontal",
-                }),
-            );
         }
     });
 }
