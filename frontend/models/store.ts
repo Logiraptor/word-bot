@@ -1,12 +1,13 @@
 import { createStore, Store, applyMiddleware, MiddlewareAPI, Dispatch, Middleware } from "redux";
 import { Tile, Move, Board } from "./core";
-import { receiveValidations, Action, receiveRender } from "./actions";
+import { receiveValidations, Action, receiveRender, receivePlay } from "./actions";
 import { GameService, LocalStorage } from "../services/game";
 
 export interface AppStore {
     moves: Move[];
     rack: Tile[];
     board: Board;
+    play: Move;
 }
 
 export const EmptyMove: Move = {
@@ -17,11 +18,11 @@ export const EmptyMove: Move = {
     direction: "horizontal",
 };
 
-export const DefaultState = {
+export const DefaultState: AppStore = {
     moves: [ EmptyMove ],
     rack: [],
     board: Array(15).map(() => Array(15).map(() => null)),
-    scores: [],
+    play: EmptyMove,
 };
 
 export class AppState {
@@ -30,20 +31,33 @@ export class AppState {
     createStore() {
         return createStore<AppStore>(
             this.reducer,
-            applyMiddleware(this.validator as Middleware, this.renderer as Middleware, this.persister as Middleware),
+            applyMiddleware(
+                this.validator as Middleware,
+                this.renderer as Middleware,
+                this.persister as Middleware,
+                this.player as Middleware,
+            ),
         );
     }
 
     persister = (store: MiddlewareAPI<AppStore>) => (next: Dispatch<AppStore>) => (action: Action) => {
         next(action);
-        console.log(action);
         const state = store.getState();
         this.storage.save(state);
     };
 
+    player = (store: MiddlewareAPI<AppStore>) => (next: Dispatch<AppStore>) => (action: Action) => {
+        next(action);
+        if (action.isUserInput) {
+            this.gameService.play(store.getState()).then((play) => {
+                store.dispatch(receivePlay(play));
+            });
+        }
+    };
+
     validator = (store: MiddlewareAPI<AppStore>) => (next: Dispatch<AppStore>) => (action: Action) => {
         next(action);
-        if (action.type !== "receivevalidations" && action.type !== "receiverender") {
+        if (action.isUserInput) {
             const state = store.getState();
             this.gameService.validate(state).then((validations) => {
                 store.dispatch(receiveValidations(validations));
@@ -53,7 +67,7 @@ export class AppState {
 
     renderer = (store: MiddlewareAPI<AppStore>) => (next: Dispatch<AppStore>) => (action: Action) => {
         next(action);
-        if (action.type !== "receiverender" && action.type !== "receivevalidations") {
+        if (action.isUserInput) {
             const state = store.getState();
             this.gameService.render(state).then((result) => {
                 store.dispatch(receiveRender(result.Board, result.Scores));
@@ -96,6 +110,9 @@ export class AppState {
                 state.moves.forEach((move, i) => {
                     move.valid = action.validations[i];
                 });
+                break;
+            case "receiveplay":
+                state.play = action.play;
                 break;
         }
 
