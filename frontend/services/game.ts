@@ -24,23 +24,24 @@ export class GameService {
     }
 }
 
-export class StorageService {
-    async load(): Promise<Move[]> {
-        let movesString = localStorage.getItem("moves");
+export class LocalStorage<T> {
+    constructor(private key: string, private defaultValue: T) {}
+
+    load(): T {
+        let movesString = localStorage.getItem(this.key);
         if (!movesString) {
-            movesString = "[]";
+            return this.defaultValue;
         }
 
-        let moves: Move[];
         try {
-            moves = JSON.parse(movesString);
+            return JSON.parse(movesString);
         } catch (e) {
-            moves = [];
+            return this.defaultValue;
         }
-        return moves;
     }
 
-    async save(game: Move[]) {
-        localStorage.setItem("moves", JSON.stringify(game));
+    save(game: T) {
+        console.log("saving", game);
+        localStorage.setItem(this.key, JSON.stringify(game));
     }
 }

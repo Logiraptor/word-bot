@@ -5,17 +5,19 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 
 import { App } from "./components/App";
-import { GameService, StorageService } from "./services/game";
+import { GameService, LocalStorage } from "./services/game";
 import { createStore, applyMiddleware } from "redux";
-import { AppStore, setRack, AppState } from "./models/store";
+import { AppStore, AppState, DefaultState } from "./models/store";
+import { Move } from "./models/core";
+import { setRack } from "./models/actions";
 
-const gameService: GameService = new GameService();
-const storageService: StorageService = new StorageService();
-const appstate = new AppState(gameService);
+const gameService = new GameService();
+const storage = new LocalStorage("appstate", DefaultState);
+const appstate = new AppState(gameService, storage);
 
 const store = appstate.createStore();
 store.dispatch(setRack([]));
 let app = document.createElement("div");
 document.body.appendChild(app);
 
-ReactDOM.render(<App store={store} gameService={gameService} storage={storageService} />, app);
+ReactDOM.render(<App store={store} gameService={gameService} />, app);

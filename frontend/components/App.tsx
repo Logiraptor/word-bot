@@ -1,11 +1,12 @@
 import * as React from "react";
 
 import { Board, Move, Tile } from "../models/core";
-import { GameService, StorageService } from "../services/game";
+import { GameService, LocalStorage } from "../services/game";
 import { BoardView } from "./BoardView";
 import { RackInput } from "./RackInput";
 import { Store, Dispatch } from "redux";
-import { AppStore, Action, updateMove, deleteMove, addMove, setRack, DefaultState } from "../models/store";
+import { AppStore, DefaultState } from "../models/store";
+import { setRack, addMove, Action, updateMove, deleteMove } from "../models/actions";
 
 export interface State {
     store: AppStore;
@@ -14,7 +15,6 @@ export interface State {
 interface Props {
     store: Store<AppStore>;
     gameService: GameService;
-    storage: StorageService;
 }
 
 export class App extends React.Component<Props, State> {
