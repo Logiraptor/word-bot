@@ -1,12 +1,17 @@
-import { Move, MoveRequest, RenderedBoard } from "../models/core";
+import { Move, MoveRequest, RenderedBoard, Tile } from "../models/core";
 
 declare const core: {
     RenderBoard(m: string): string;
+    RemainingTiles(m: string): string;
 };
 
 export class GameService {
     async render(req: MoveRequest): Promise<RenderedBoard> {
         return JSON.parse(core.RenderBoard(JSON.stringify(req)));
+    }
+
+    async remainingTiles(req: MoveRequest): Promise<Tile[]> {
+        return JSON.parse(core.RemainingTiles(JSON.stringify(req)));
     }
 
     async play(req: MoveRequest): Promise<Move> {

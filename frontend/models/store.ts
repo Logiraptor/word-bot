@@ -1,6 +1,6 @@
 import { createStore, Store, applyMiddleware, MiddlewareAPI, Dispatch, Middleware } from "redux";
 import { Tile, Move, Board, TileFlag } from "./core";
-import { receiveValidations, Action, receiveRender, receivePlay } from "./actions";
+import { receiveValidations, Action, receiveRender, receivePlay, receiveRemainingTiles } from "./actions";
 import { GameService, LocalStorage } from "../services/game";
 
 export interface AppStore {
@@ -8,6 +8,7 @@ export interface AppStore {
     rack: Tile[];
     board: Board;
     play: Move;
+    remainingTiles: Tile[];
 }
 
 export const EmptyMove: Move = {
@@ -23,6 +24,7 @@ export const DefaultState: AppStore = {
     rack: [],
     board: Array(15).map(() => Array(15).map(() => null)),
     play: EmptyMove,
+    remainingTiles: [],
 };
 
 export class AppState {
@@ -61,6 +63,16 @@ export class AppState {
             const state = store.getState();
             this.gameService.validate(state).then((validations) => {
                 store.dispatch(receiveValidations(validations));
+            });
+        }
+    };
+
+    remainingTiler = (store: MiddlewareAPI<AppStore>) => (next: Dispatch<AppStore>) => (action: Action) => {
+        next(action);
+        if (action.changesBoard) {
+            const state = store.getState();
+            this.gameService.remainingTiles(state).then((tiles) => {
+                store.dispatch(receiveRemainingTiles(tiles));
             });
         }
     };
@@ -130,6 +142,9 @@ export class AppState {
                 break;
             case "receiveplay":
                 state.play = action.play;
+                break;
+            case "receiveremainingtiles":
+                state.remainingTiles = action.tiles;
                 break;
         }
 

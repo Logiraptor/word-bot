@@ -6,18 +6,6 @@ Long running AI DOJO:
     Ability to add new matches without distrupting / losing more than currenly playing games.
     Scheduler for PCF integration
 
-
-Faster move generation - "speedy"
-    compare to smarty for benchmarks
-    implement gaddag
-
-
-Test Move generation
-    Brute as standard baseline
-    Smarty as matching that ^
-    Speedy as matching that ^
-
-
 UI Rewrite:
     Show remaining tiles in bag
     Show opponent's hand when it's certain

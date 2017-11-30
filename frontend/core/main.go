@@ -10,7 +10,8 @@ import (
 
 func main() {
 	js.Global.Set("core", map[string]interface{}{
-		"RenderBoard": Bridge(web.Render, &web.MoveRequest{}),
+		"RenderBoard":    Bridge(web.Render, &web.MoveRequest{}),
+		"RemainingTiles": Bridge(web.RemainingTiles, &web.MoveRequest{}),
 	})
 }
 

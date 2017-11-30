@@ -33,6 +33,17 @@ func (c Bag) validate() {
 	}
 }
 
+// Remaining returns the tiles still present in the bag
+func (c Bag) Remaining() []Tile {
+	output := []Tile{}
+	for i := range c.tiles {
+		if c.CanConsume(i) {
+			output = append(output, c.tiles[i])
+		}
+	}
+	return output
+}
+
 // Shuffle randomizes the order of tiles inside the bag
 func (c Bag) Shuffle() Bag {
 	result := c

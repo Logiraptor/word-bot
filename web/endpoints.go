@@ -266,3 +266,12 @@ func (s Server) Validate(moves MoveRequest) []bool {
 	}
 	return output
 }
+
+func RemainingTiles(moves MoveRequest) []TileJS {
+	b := core.NewConsumableBag()
+	for _, m := range moves.Moves {
+		b = b.ConsumeTiles(m.ToPlacedTiles().Word)
+	}
+	var remaining []core.Tile = b.Remaining()
+	return tiles2JsTiles(remaining)
+}

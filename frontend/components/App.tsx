@@ -45,6 +45,7 @@ export class App extends React.Component<Props, State> {
                         service={this.props.gameService}
                     />
                     <ScoreBoard moves={store.moves} scores={store.moves.map((x) => x.score)} />
+                    {/* TODO: render remaining tiles. */}
                     <div className="player-rack">
                         <RackInput
                             Tiles={store.rack}

@@ -44,7 +44,21 @@ export interface ReceivePlay {
     play: Move;
 }
 
-export type Action = SetRack | UpdateMove | DeleteMove | AddMove | ReceiveRender | ReceiveValidations | ReceivePlay;
+export interface ReceiveRemainingTiles {
+    changesBoard: false;
+    type: "receiveremainingtiles";
+    tiles: Tile[];
+}
+
+export type Action =
+    | SetRack
+    | UpdateMove
+    | DeleteMove
+    | AddMove
+    | ReceiveRender
+    | ReceiveValidations
+    | ReceivePlay
+    | ReceiveRemainingTiles;
 
 export function setRack(value: Tile[]): SetRack {
     return { type: "setrack", value, changesBoard: true };
@@ -72,4 +86,8 @@ export function receiveValidations(validations: boolean[]): ReceiveValidations {
 
 export function receivePlay(play: Move): ReceivePlay {
     return { type: "receiveplay", play, changesBoard: true };
+}
+
+export function receiveRemainingTiles(tiles: Tile[]): ReceiveRemainingTiles {
+    return { type: "receiveremainingtiles", changesBoard: false, tiles };
 }
