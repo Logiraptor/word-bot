@@ -28,7 +28,7 @@ func (t Tile) PointValue() Score {
 	if t.IsBlank() {
 		return 0
 	}
-	return letterValues[t]
+	return letterValues[t.ToLetter()]
 }
 
 // IsBlank returns true for blank tiles
@@ -46,7 +46,21 @@ func (t Tile) IsNoTile() bool {
 	return t == -1
 }
 
-const blankTileBit = 1 << 10
+// Flag returns the value of the ith flag.
+func (t Tile) Flag(i uint) bool {
+	return ((t&flagMask)>>flagOffset)&(1<<i) != 0
+}
+
+func (t Tile) SetFlag(i uint, value bool) Tile {
+	if value {
+		return t | (1 << (i + flagOffset))
+	}
+	return t & (^(1 << (i + flagOffset)))
+}
+
+const flagMask = 0xff00
+const flagOffset = 8
+const blankTileBit = 1 << 7
 const letterMask = 1<<7 - 1
 
 // Letter represents an abstract letter (but more efficient to use than a rune)

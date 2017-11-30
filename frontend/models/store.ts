@@ -1,5 +1,5 @@
 import { createStore, Store, applyMiddleware, MiddlewareAPI, Dispatch, Middleware } from "redux";
-import { Tile, Move, Board } from "./core";
+import { Tile, Move, Board, TileFlag } from "./core";
 import { receiveValidations, Action, receiveRender, receivePlay } from "./actions";
 import { GameService, LocalStorage } from "../services/game";
 
@@ -48,7 +48,7 @@ export class AppState {
 
     player = (store: MiddlewareAPI<AppStore>) => (next: Dispatch<AppStore>) => (action: Action) => {
         next(action);
-        if (action.isUserInput) {
+        if (action.changesBoard && action.type != "receiveplay") {
             this.gameService.play(store.getState()).then((play) => {
                 store.dispatch(receivePlay(play));
             });
@@ -57,7 +57,7 @@ export class AppState {
 
     validator = (store: MiddlewareAPI<AppStore>) => (next: Dispatch<AppStore>) => (action: Action) => {
         next(action);
-        if (action.isUserInput) {
+        if (action.changesBoard) {
             const state = store.getState();
             this.gameService.validate(state).then((validations) => {
                 store.dispatch(receiveValidations(validations));
@@ -67,11 +67,28 @@ export class AppState {
 
     renderer = (store: MiddlewareAPI<AppStore>) => (next: Dispatch<AppStore>) => (action: Action) => {
         next(action);
-        if (action.isUserInput) {
+        if (action.changesBoard) {
             const state = store.getState();
-            this.gameService.render(state).then((result) => {
-                store.dispatch(receiveRender(result.Board, result.Scores));
-            });
+            const movesWithPlay = [
+                ...state.moves,
+                {
+                    ...state.play,
+                    tiles: state.play.tiles.map((t) => ({
+                        ...t,
+                        Flags: [ TileFlag.NextAIMove ],
+                    })),
+                },
+            ];
+            this.gameService
+                .render({
+                    moves: movesWithPlay,
+                    rack: state.rack,
+                })
+                .then((result) => {
+                    console.log("Moves", movesWithPlay);
+                    console.log("result", result);
+                    store.dispatch(receiveRender(result.Board, result.Scores));
+                });
         }
     };
 

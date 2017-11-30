@@ -49,6 +49,28 @@ func assertScore(t *testing.T, b *Board, score Score, word []Tile, row, col int,
 	}
 }
 
+func TestPointValueWithFlags(t *testing.T) {
+	tile := Rune2Letter('a').ToTile(false)
+	tile = tile.SetFlag(0, true)
+	assert.Equal(t, Score(1), tile.PointValue())
+}
+
+func TestRenderWithTags(t *testing.T) {
+	b := NewBoard()
+	tile := Rune2Letter('z').ToTile(true)
+	tile = tile.SetFlag(0, true)
+	tile = tile.SetFlag(3, true)
+
+	assert.True(t, tile.Flag(0))
+	assert.True(t, tile.Flag(3))
+	b.PlaceTiles(PlacedTiles{
+		Col: 7, Row: 7, Word: []Tile{tile}, Direction: Horizontal,
+	})
+
+	assert.True(t, b.Cells[7][7].Tile.Flag(0))
+	assert.True(t, b.Cells[7][7].Tile.Flag(3))
+}
+
 func TestFirstWord(t *testing.T) {
 	b := NewBoard()
 	assertScore(t, b, 10, toTiles("dog"), 7, 7, Horizontal)
@@ -95,6 +117,22 @@ func TestConversions(t *testing.T) {
 	tile := Rune2Letter('o').ToTile(true)
 	r := tile.ToRune()
 	assert.Equal(t, r, 'o')
+}
+
+func TestTileFlags(t *testing.T) {
+	tile := Rune2Letter('r').ToTile(true)
+	for i := uint(0); i < 8; i++ {
+		tile = tile.SetFlag(i, true)
+		assert.True(t, tile.Flag(i))
+		assert.True(t, tile.IsBlank())
+		assert.Equal(t, tile.ToRune(), 'r')
+	}
+	for i := uint(0); i < 8; i++ {
+		tile = tile.SetFlag(i, false)
+		assert.False(t, tile.Flag(i))
+		assert.True(t, tile.IsBlank())
+		assert.Equal(t, tile.ToRune(), 'r')
+	}
 }
 
 func TestValidation(t *testing.T) {

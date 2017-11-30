@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Tile } from "../models/core";
+import { Tile, TileFlag } from "../models/core";
+import classNames = require("classnames");
 
 export interface Props {
     mini?: boolean;
@@ -50,6 +51,7 @@ export class RackInput extends React.Component<Props> {
                             Letter: letter,
                             Value: 0,
                             Bonus: "",
+                            Flags: [],
                         };
                         this.props.onChange([ ...this.props.Tiles, newTile ]);
                         return;
@@ -83,6 +85,7 @@ export class RackInput extends React.Component<Props> {
                                 Letter: "",
                                 Value: 0,
                                 Bonus: "",
+                                Flags: [],
                             };
                             this.props.onChange([ ...this.props.Tiles, newTile ]);
                             break;
@@ -112,10 +115,15 @@ export function TileView({ tile, onClick }: { tile: Tile; onClick: () => void })
         letter = tile.Letter;
     }
 
+    const className = classNames("space", "tile", {
+        blank: tile.Blank,
+        "ai-move": tile.Flags && tile.Flags.indexOf(TileFlag.NextAIMove) != -1,
+    });
+
     let hasTile = tile.Value !== -1;
     if (hasTile) {
         return (
-            <span onClick={onClick} className={`space tile ${tile.Blank ? " blank" : ""}`}>
+            <span onClick={onClick} className={className}>
                 <span className="letter">{letter}</span>
                 <span className="score">{tile.Value}</span>{" "}
             </span>

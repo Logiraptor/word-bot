@@ -1,10 +1,15 @@
 export type Board = Tile[][];
 
+export enum TileFlag {
+    NextAIMove,
+}
+
 export interface Tile {
     Letter: string;
     Blank: boolean;
     Value: number;
     Bonus: string;
+    Flags: TileFlag[] | null;
 }
 
 export interface Move {

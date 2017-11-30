@@ -85,10 +85,14 @@ body {
         left: 70%;
         font-size: 0.50em;
     }
-}
 
-.tile.blank {
-    color: grey;
+    &.ai-move {
+        @include bg(#7cee65);
+    }
+
+    &.blank {
+        color: grey;
+    }
 }
 
 .rack {

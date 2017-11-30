@@ -39,10 +39,15 @@ type TileJS struct {
 	Blank  bool
 	Value  core.Score
 	Bonus  string
+	Flags  []uint
 }
 
 func (t TileJS) ToTile() core.Tile {
-	return core.Rune2Letter([]rune(t.Letter)[0]).ToTile(t.Blank)
+	tile := core.Rune2Letter([]rune(t.Letter)[0]).ToTile(t.Blank)
+	for _, f := range t.Flags {
+		tile = tile.SetFlag(f, true)
+	}
+	return tile
 }
 
 type Move struct {
@@ -86,7 +91,11 @@ func jsTilesToTiles(jsTiles []TileJS) []core.Tile {
 		if len(letters) > 0 {
 			letter = letters[0]
 		}
-		tiles = append(tiles, core.Rune2Letter(letter).ToTile(t.Blank))
+		tile := core.Rune2Letter(letter).ToTile(t.Blank)
+		for _, f := range t.Flags {
+			tile = tile.SetFlag(f, true)
+		}
+		tiles = append(tiles, tile)
 	}
 	return tiles
 }
@@ -94,13 +103,24 @@ func jsTilesToTiles(jsTiles []TileJS) []core.Tile {
 func tiles2JsTiles(tiles []core.Tile) []TileJS {
 	jsTiles := []TileJS{}
 	for _, t := range tiles {
-		jsTiles = append(jsTiles, TileJS{
-			Blank:  t.IsBlank(),
-			Letter: string(t.ToRune()),
-			Value:  t.PointValue(),
-		})
+		jsTiles = append(jsTiles, tile2JsTile(t))
 	}
 	return jsTiles
+}
+
+func tile2JsTile(t core.Tile) TileJS {
+	tJS := TileJS{
+		Blank:  t.IsBlank(),
+		Letter: string(t.ToRune()),
+		Value:  t.PointValue(),
+		Flags:  []uint{},
+	}
+	for i := uint(0); i < 8; i++ {
+		if t.Flag(i) {
+			tJS.Flags = append(tJS.Flags, i)
+		}
+	}
+	return tJS
 }
 
 func (s Server) GetMove(rw http.ResponseWriter, req *http.Request) {
@@ -205,12 +225,7 @@ func Render(moves MoveRequest) RenderedBoard {
 	for i, row := range b.Cells {
 		for j, cell := range row {
 			if !cell.Tile.IsNoTile() {
-				output.Board[i][j] = TileJS{
-					Blank:  cell.Tile.IsBlank(),
-					Letter: string(cell.Tile.ToRune()),
-					Value:  cell.Tile.PointValue(),
-					Bonus:  cell.Bonus.ToString(),
-				}
+				output.Board[i][j] = tile2JsTile(cell.Tile)
 			} else {
 				output.Board[i][j] = TileJS{
 					Blank:  true,
