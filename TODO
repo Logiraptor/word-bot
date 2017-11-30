@@ -19,7 +19,5 @@ Test Move generation
 
 
 UI Rewrite:
-    Expose move 'tags' which allow a move to be highlighted on the rendered board.
-        - If a move has a tag going into the renderer, then all tiles placed by that move
-          must keep that tag coming out.
-        - This enables highlighting the hovered move, or rendering the current best move.
+    Show remaining tiles in bag
+    Show opponent's hand when it's certain
