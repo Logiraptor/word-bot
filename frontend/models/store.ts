@@ -1,4 +1,4 @@
-import { createStore, Store, applyMiddleware, MiddlewareAPI, Dispatch, Middleware, Reducer } from "redux";
+import { createStore, applyMiddleware, MiddlewareAPI, Dispatch, Middleware, Reducer } from "redux";
 import { Tile, Move, Board, TileFlag } from "./core";
 import { receiveValidations, Action, receiveRender, receivePlay, receiveRemainingTiles } from "./actions";
 import { GameService, LocalStorage } from "../services/game";

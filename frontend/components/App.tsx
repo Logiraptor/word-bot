@@ -1,19 +1,17 @@
 import * as React from "react";
 
-import { Board, Move, Tile } from "../models/core";
-import { GameService, LocalStorage } from "../services/game";
+import { Move, Tile } from "../models/core";
 import { BoardView } from "./BoardView";
 import { RackInput, TileView } from "./RackInput";
-import { Store, Dispatch } from "redux";
 import { AppStore, DefaultState } from "../models/store";
-import { setRack, addMove, Action, updateMove, deleteMove } from "../models/actions";
+import { GameState } from "../models/gamestate";
 
 export interface State {
     store: AppStore;
 }
 
 interface Props {
-    store: Store<AppStore>;
+    gameState: GameState;
 }
 
 export class App extends React.Component<Props, State> {
@@ -25,10 +23,8 @@ export class App extends React.Component<Props, State> {
     }
 
     componentDidMount() {
-        this.props.store.subscribe(() => {
-            this.setState({
-                store: this.props.store.getState(),
-            });
+        this.props.gameState.subscribe((s) => {
+            this.setState({ store: s });
         });
     }
 
@@ -67,7 +63,7 @@ export class App extends React.Component<Props, State> {
             <div>
                 <BoardView tiles={store.board} />
                 <div className="right-panel">
-                    <MovePanel dispatch={this.props.store.dispatch} moves={store.moves} />
+                    <MovePanel gameState={this.props.gameState} moves={store.moves} />
                     <ScoreBoard moves={store.moves} scores={store.moves.map((x) => x.score)} />
                     {countElems}
                     <div className="player-rack">
@@ -75,7 +71,7 @@ export class App extends React.Component<Props, State> {
                         <RackInput
                             Tiles={store.rack}
                             onChange={(tiles) => {
-                                this.props.store.dispatch(setRack(tiles));
+                                this.props.gameState.setRack(tiles);
                             }}
                             onMove={(row, col) => {}}
                             onFlip={() => {}}
@@ -84,10 +80,8 @@ export class App extends React.Component<Props, State> {
                             player={undefined}
                             onSubmit={() => {
                                 let newRack = removeFromRack(store.rack, store.play.tiles);
-                                this.props.store.dispatch(
-                                    addMove({ ...store.play, player: getOtherPlayer(store.moves) }),
-                                );
-                                this.props.store.dispatch(setRack(newRack));
+                                this.props.gameState.addMove({ ...store.play, player: getOtherPlayer(store.moves) });
+                                this.props.gameState.setRack(newRack);
                             }}
                         />
                     </div>
@@ -131,7 +125,7 @@ class ScoreBoard extends React.Component<{ moves: Move[]; scores: number[] }> {
 }
 
 interface MovePanelProps {
-    dispatch: Dispatch<Action>;
+    gameState: GameState;
     moves: Move[];
 }
 
@@ -140,7 +134,7 @@ class MovePanel extends React.Component<MovePanelProps> {
         const changeMove = (f: (move: Move) => void) => {
             const newMove = { ...move };
             f(newMove);
-            this.props.dispatch(updateMove(newMove, i));
+            this.props.gameState.updateMove(i, newMove);
         };
 
         return (
@@ -164,7 +158,7 @@ class MovePanel extends React.Component<MovePanelProps> {
                         });
                     }}
                     onDelete={() => {
-                        this.props.dispatch(deleteMove(i));
+                        this.props.gameState.removeMove(i);
                     }}
                     player={move.player}
                     onChangePlayer={(player) => {
@@ -173,7 +167,7 @@ class MovePanel extends React.Component<MovePanelProps> {
                         });
                     }}
                     onSubmit={() => {
-                        this.props.dispatch(addMove(newMove(this.props.moves)));
+                        this.props.gameState.addMove(newMove(this.props.moves));
                     }}
                 />
             </div>
