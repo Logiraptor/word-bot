@@ -1,4 +1,4 @@
-import { createStore, Store, applyMiddleware, MiddlewareAPI, Dispatch, Middleware } from "redux";
+import { createStore, Store, applyMiddleware, MiddlewareAPI, Dispatch, Middleware, Reducer } from "redux";
 import { Tile, Move, Board, TileFlag } from "./core";
 import { receiveValidations, Action, receiveRender, receivePlay, receiveRemainingTiles } from "./actions";
 import { GameService, LocalStorage } from "../services/game";
@@ -15,7 +15,7 @@ export const EmptyMove: Move = {
     tiles: [],
     row: 0,
     col: 0,
-    player: undefined,
+    player: 1,
     direction: "horizontal",
 };
 
@@ -32,7 +32,7 @@ export class AppState {
 
     createStore() {
         return createStore<AppStore>(
-            this.reducer,
+            this.reducer as Reducer<AppStore>,
             applyMiddleware(
                 this.validator as Middleware,
                 this.renderer as Middleware,
@@ -112,42 +112,40 @@ export class AppState {
         switch (action.type) {
             case "addmove":
                 state.moves = [ ...state.moves, action.value ];
-                break;
+                return state;
             case "deletemove":
                 state.moves = [ ...state.moves ];
                 state.moves.splice(action.index, 1);
                 if (state.moves.length === 0) {
                     state.moves.push(EmptyMove);
                 }
-                break;
+                return state;
             case "updatemove":
                 state.moves = [ ...state.moves ];
                 state.moves[action.index] = action.value;
-                break;
+                return state;
             case "setrack":
                 state.rack = action.value;
-                break;
+                return state;
             case "receiverender":
                 state.moves = [ ...state.moves ];
                 state.board = action.board;
                 state.moves.forEach((move, i) => {
                     move.score = action.scores[i];
                 });
-                break;
+                return state;
             case "receivevalidations":
                 state.moves = [ ...state.moves ];
                 state.moves.forEach((move, i) => {
                     move.valid = action.validations[i];
                 });
-                break;
+                return state;
             case "receiveplay":
                 state.play = action.play;
-                break;
+                return state;
             case "receiveremainingtiles":
                 state.remainingTiles = action.tiles;
-                break;
+                return state;
         }
-
-        return state;
     };
 }

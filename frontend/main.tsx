@@ -20,4 +20,4 @@ store.dispatch(setRack([]));
 let app = document.createElement("div");
 document.body.appendChild(app);
 
-ReactDOM.render(<App store={store} gameService={gameService} />, app);
+ReactDOM.render(<App store={store} />, app);

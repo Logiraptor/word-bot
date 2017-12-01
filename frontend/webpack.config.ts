@@ -2,7 +2,7 @@ import * as ExtractTextPlugin from "extract-text-webpack-plugin";
 import * as HtmlWebpackPlugin from "html-webpack-plugin";
 import * as webpack from "webpack";
 
-let __dirname: string;
+declare const __dirname: string;
 
 const config: webpack.Configuration = {
     entry: __dirname + "/main.tsx",

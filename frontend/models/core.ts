@@ -1,4 +1,4 @@
-export type Board = Tile[][];
+export type Board = (Tile | null)[][];
 
 export enum TileFlag {
     NextAIMove,

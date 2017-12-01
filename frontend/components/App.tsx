@@ -14,7 +14,6 @@ export interface State {
 
 interface Props {
     store: Store<AppStore>;
-    gameService: GameService;
 }
 
 export class App extends React.Component<Props, State> {
@@ -53,7 +52,7 @@ export class App extends React.Component<Props, State> {
         const countElems = Object.keys(counts).map((name) => {
             const count = counts[name];
             return (
-                <span>
+                <span className="tile-count">
                     <TileView tile={count.tile} onClick={() => {}} /> - {count.count}
                 </span>
             );
@@ -68,11 +67,7 @@ export class App extends React.Component<Props, State> {
             <div>
                 <BoardView tiles={store.board} />
                 <div className="right-panel">
-                    <MovePanel
-                        dispatch={this.props.store.dispatch}
-                        moves={store.moves}
-                        service={this.props.gameService}
-                    />
+                    <MovePanel dispatch={this.props.store.dispatch} moves={store.moves} />
                     <ScoreBoard moves={store.moves} scores={store.moves.map((x) => x.score)} />
                     {countElems}
                     <div className="player-rack">
@@ -87,14 +82,11 @@ export class App extends React.Component<Props, State> {
                             onDelete={() => {}}
                             onChangePlayer={(player) => {}}
                             player={undefined}
-                            onSubmit={async () => {
-                                let resp: Move = await this.props.gameService.play({
-                                    moves: store.moves,
-                                    rack: store.rack,
-                                });
-
-                                let newRack = removeFromRack(store.rack, resp.tiles);
-                                this.props.store.dispatch(addMove({ ...resp, player: getOtherPlayer(store.moves) }));
+                            onSubmit={() => {
+                                let newRack = removeFromRack(store.rack, store.play.tiles);
+                                this.props.store.dispatch(
+                                    addMove({ ...store.play, player: getOtherPlayer(store.moves) }),
+                                );
                                 this.props.store.dispatch(setRack(newRack));
                             }}
                         />
@@ -141,7 +133,6 @@ class ScoreBoard extends React.Component<{ moves: Move[]; scores: number[] }> {
 interface MovePanelProps {
     dispatch: Dispatch<Action>;
     moves: Move[];
-    service: GameService;
 }
 
 class MovePanel extends React.Component<MovePanelProps> {
