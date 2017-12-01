@@ -3,7 +3,7 @@ import * as React from "react";
 import { Board, Move, Tile } from "../models/core";
 import { GameService, LocalStorage } from "../services/game";
 import { BoardView } from "./BoardView";
-import { RackInput } from "./RackInput";
+import { RackInput, TileView } from "./RackInput";
 import { Store, Dispatch } from "redux";
 import { AppStore, DefaultState } from "../models/store";
 import { setRack, addMove, Action, updateMove, deleteMove } from "../models/actions";
@@ -35,6 +35,35 @@ export class App extends React.Component<Props, State> {
 
     render() {
         const { store } = this.state;
+
+        let counts: { [x: string]: { tile: Tile; count: number } } = {};
+        store.remainingTiles.forEach((tile) => {
+            const name = tile.Blank ? "blank" : tile.Letter;
+
+            if (!(name in counts)) {
+                counts[name] = {
+                    tile,
+                    count: 0,
+                };
+            }
+
+            counts[name].count++;
+        });
+
+        const countElems = Object.keys(counts).map((name) => {
+            const count = counts[name];
+            return (
+                <span>
+                    <TileView tile={count.tile} onClick={() => {}} /> - {count.count}
+                </span>
+            );
+        });
+
+        let opponentRack = null;
+        if (store.remainingTiles.length <= 7) {
+            opponentRack = store.remainingTiles.map((tile) => <TileView tile={tile} onClick={() => {}} />);
+        }
+
         return (
             <div>
                 <BoardView tiles={store.board} />
@@ -45,8 +74,9 @@ export class App extends React.Component<Props, State> {
                         service={this.props.gameService}
                     />
                     <ScoreBoard moves={store.moves} scores={store.moves.map((x) => x.score)} />
-                    {/* TODO: render remaining tiles. */}
+                    {countElems}
                     <div className="player-rack">
+                        {opponentRack}
                         <RackInput
                             Tiles={store.rack}
                             onChange={(tiles) => {

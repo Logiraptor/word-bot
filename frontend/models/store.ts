@@ -38,6 +38,7 @@ export class AppState {
                 this.renderer as Middleware,
                 this.persister as Middleware,
                 this.player as Middleware,
+                this.remainingTiler as Middleware,
             ),
         );
     }
@@ -71,9 +72,8 @@ export class AppState {
         next(action);
         if (action.changesBoard) {
             const state = store.getState();
-            this.gameService.remainingTiles(state).then((tiles) => {
-                store.dispatch(receiveRemainingTiles(tiles));
-            });
+            const tiles = this.gameService.remainingTiles(state);
+            store.dispatch(receiveRemainingTiles(tiles));
         }
     };
 

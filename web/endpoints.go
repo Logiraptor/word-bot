@@ -272,6 +272,7 @@ func RemainingTiles(moves MoveRequest) []TileJS {
 	for _, m := range moves.Moves {
 		b = b.ConsumeTiles(m.ToPlacedTiles().Word)
 	}
+	b = b.ConsumeTiles(jsTilesToTiles(moves.Rack))
 	var remaining []core.Tile = b.Remaining()
 	return tiles2JsTiles(remaining)
 }

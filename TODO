@@ -5,7 +5,3 @@ Long running AI DOJO:
     Prioritize matches with low confidence
     Ability to add new matches without distrupting / losing more than currenly playing games.
     Scheduler for PCF integration
-
-UI Rewrite:
-    Show remaining tiles in bag
-    Show opponent's hand when it's certain

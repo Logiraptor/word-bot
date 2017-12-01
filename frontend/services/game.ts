@@ -1,4 +1,5 @@
 import { Move, MoveRequest, RenderedBoard, Tile } from "../models/core";
+import { DefaultState } from "../models/store";
 
 declare const core: {
     RenderBoard(m: string): string;
@@ -10,7 +11,7 @@ export class GameService {
         return JSON.parse(core.RenderBoard(JSON.stringify(req)));
     }
 
-    async remainingTiles(req: MoveRequest): Promise<Tile[]> {
+    remainingTiles(req: MoveRequest): Tile[] {
         return JSON.parse(core.RemainingTiles(JSON.stringify(req)));
     }
 
@@ -39,7 +40,7 @@ export class LocalStorage<T> {
         }
 
         try {
-            return JSON.parse(movesString);
+            return Object.assign({}, DefaultState, JSON.parse(movesString));
         } catch (e) {
             return this.defaultValue;
         }
