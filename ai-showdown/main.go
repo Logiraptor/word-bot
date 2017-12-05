@@ -7,14 +7,15 @@ import (
 	"math/rand"
 	"os/exec"
 
-	"github.com/Logiraptor/word-bot/smarter"
-
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
 	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/persist"
 	"github.com/Logiraptor/word-bot/wordlist"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"time"
+	"sync"
+	"runtime"
 )
 
 var wordDB *wordlist.Trie
@@ -48,38 +49,58 @@ func init() {
 
 func main() {
 
-	// rand.Seed(time.Now().Unix())
+	rand.Seed(time.Now().Unix())
 
-	db, err := persist.NewDB("results.db")
+	db, err := persist.NewDB("smart-results.db")
 	if err != nil {
 		panic(err)
 	}
 
+	numWorkers := runtime.NumCPU()
+	jobs := make(chan Job, numWorkers * 2)
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < numWorkers; i++ {
+		wg.Add(1)
+		go worker(db, &wg, jobs)
+	}
+
 	smarty := ai.NewSmartyAI(wordDB, wordDB)
-	playout := ai.NewPlayout(smarty)
-
-	for i := 0; i < 100; i++ {
-		for iter := uint(1); iter < 129; iter *= 2 {
-			for sim := uint(1); sim < 129; sim *= 2 {
-				for bias := 0.01; bias < 11; bias *= 10 {
-					mcts := smarter.NewMCTSAI(smarty, playout, iter, sim, bias)
-
-					g := playGame(
-						func(b *core.Board) *Player {
-							return NewPlayer(smarty, 1)
-						}, func(b *core.Board) *Player {
-							return NewPlayer(mcts, 2)
-						},
-					)
-
-					err := db.SaveGame(g)
-					if err != nil {
-						fmt.Println("ERROR SAVING GAME", err)
-					}
-				}
-			}
+	numIters := 100000
+	for i := 0; i < numIters; i++ {
+		jobs <- Job {
+			p1: func(b *core.Board) *Player {
+				return NewPlayer(smarty, 1)
+			},
+			p2:func(b *core.Board) *Player {
+				return NewPlayer(smarty, 2)
+			},
+		}
+		if i % 100 == 0 {
+			fmt.Println("Enqueued", i, "/", numIters, "jobs")
 		}
 	}
+
+	close(jobs)
+	fmt.Println("Done enqueuing, waiting for final jobs to terminate")
+	
+	wg.Wait()
+}
+
+type Job struct {
+	p1, p2 func(b *core.Board) *Player
+}
+
+func worker(db *persist.DB, wg *sync.WaitGroup, jobs <-chan Job) {
+	for j := range jobs {
+		g := playGame(j.p1, j.p2)
+		err := db.SaveGame(g)
+		if err != nil {
+			fmt.Println("ERROR Saving Game", err)
+		}
+	}
+	wg.Done()
 }
 
 type Player struct {
@@ -174,18 +195,18 @@ func playGame(a, b func(board *core.Board) *Player) persist.Game {
 			game.AddMove(p2.name, move)
 		}
 
-		fmt.Println(bag.Count(), "Tiles left:", p1.name, p1.score, "to", p2.name, p2.score)
+		//fmt.Println(bag.Count(), "Tiles left:", p1.name, p1.score, "to", p2.name, p2.score)
 	}
 
 	if swapped {
 		p1, p2 = p2, p1
 	}
 
-	fmt.Println("GAME OVER")
-	fmt.Printf("Final Score %s = %d\n", p1.name, p1.score)
-	fmt.Printf("Final Score %s = %d\n", p2.name, p2.score)
+	//fmt.Println("GAME OVER")
+	//fmt.Printf("Final Score %s = %d\n", p1.name, p1.score)
+	//fmt.Printf("Final Score %s = %d\n", p2.name, p2.score)
 
-	board.Print()
+	//board.Print()
 
 	return game
 }
