@@ -20,3 +20,7 @@ type MoveGenerator interface {
 type BoardEvaluator interface {
 	Evaluate(b *core.Board, bag core.Bag, p1, p2 core.Rack) float64
 }
+
+type MoveEvaluator interface {
+	Evaluate(b *core.Board, rack core.Rack, move core.ScoredMove) float64
+}

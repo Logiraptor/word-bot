@@ -1,8 +1,6 @@
 package persist
 
 import (
-	"encoding/json"
-
 	"github.com/Logiraptor/word-bot/core"
 	"github.com/jinzhu/gorm"
 )
@@ -17,11 +15,16 @@ func NewDB(filename string) (*DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(Game{}, Move{})
+	db.AutoMigrate(Game{}, Move{}, LeaveWeight{})
 
 	return &DB{
 		db: db,
 	}, nil
+}
+
+type LeaveWeight struct {
+	Leave  string
+	Weight float64
 }
 
 type Game struct {
@@ -29,11 +32,10 @@ type Game struct {
 	Moves []Move
 }
 
-func (g *Game) AddMove(player string, move core.ScoredMove) {
-	buf, _ := json.Marshal(move.Word)
-
+func (g *Game) AddMove(player string, leave []core.Tile, move core.ScoredMove) {
 	g.Moves = append(g.Moves, Move{
-		Tiles:  string(buf),
+		Tiles:  core.Tiles2String(move.Word),
+		Leave:  core.Tiles2String(leave),
 		Row:    move.Row,
 		Col:    move.Col,
 		Player: player,
@@ -45,6 +47,7 @@ func (g *Game) AddMove(player string, move core.ScoredMove) {
 type Move struct {
 	ID       uint `gorm:"primary_key"`
 	Tiles    string
+	Leave    string
 	Row, Col int
 	Dir      core.Direction
 	Score    core.Score
@@ -56,6 +59,15 @@ type Move struct {
 
 func (db *DB) SaveGame(g Game) error {
 	return db.db.Create(&g).Error
+}
+
+func (db *DB) LoadLeaveWeights() ([]LeaveWeight, error) {
+	var weights []LeaveWeight
+	err := db.db.Find(&weights).Error
+	if err != nil {
+		return nil, err
+	}
+	return weights, nil
 }
 
 func (db *DB) PrintStats() {
@@ -114,7 +126,7 @@ func (db *DB) PrintStats() {
 			INNER JOIN moves ON moves.game_id = games.id
 			GROUP BY games.id, moves.player),
 		matchups AS
-			(SELECT games.id as game_id, p1.player as p1, p2.player as p2, p1.score > p2.score as win
+			(SELECT games.id as game_id, p1.player as p1, p2.player as p2, p1.score - p2.score as diff, p1.score > p2.score as win
 			FROM games
 			INNER JOIN game_player_scores AS p1 ON p1.game_id = games.id
 			INNER JOIN game_player_scores AS p2 ON p2.game_id = games.id AND p1.player < p2.player)
@@ -124,6 +136,24 @@ func (db *DB) PrintStats() {
 	GROUP BY p1, p2
 	ORDER BY winrate DESC
 
+	`
+
+	// leave + diff + win
+	_ = `
+	WITH
+	game_player_scores AS 
+		(SELECT games.id AS game_id, player, SUM(moves.score) as score
+		FROM games
+		INNER JOIN moves ON moves.game_id = games.id
+		GROUP BY games.id, moves.player),
+	matchups AS
+		(SELECT games.id as game_id, p1.player as p1, p2.player as p2, p1.score - p2.score as diff, p1.score > p2.score as win
+		FROM games
+		INNER JOIN game_player_scores AS p1 ON p1.game_id = games.id
+		INNER JOIN game_player_scores AS p2 ON p2.game_id = games.id AND p1.player < p2.player)
+	SELECT moves.leave, diff, win
+	FROM matchups
+	INNER JOIN moves ON moves.game_id = matchups.game_id
 	`
 
 }

@@ -5,3 +5,6 @@ Long running AI DOJO:
     Prioritize matches with low confidence
     Ability to add new matches without distrupting / losing more than currenly playing games.
     Scheduler for PCF integration
+
+Build System:
+    Build wordlist into binary for use outside of native code
