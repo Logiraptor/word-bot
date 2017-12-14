@@ -29,10 +29,13 @@ _freeTensorBuffer = _wordbot.FreeTensorBuffer
 _freeTensorBuffer.argtypes = [
     POINTER(POINTER(c_double)),
 ]
+_getFinalScore = _wordbot.GetFinalScore
+_getFinalScore.argtypes = [
+    c_longlong
+]
+_getFinalScore.restype = c_longlong
 
-
-Result = namedtuple('Result', ['winner'])
-
+Result = namedtuple('Result', ['winner', 'diff'])
 
 class GameContext(object):
     def __init__(self, key):
@@ -52,7 +55,7 @@ class GameContext(object):
     def free(self):
         _freeContext(self.ctx)
 
-    def getMoves(self):
+    def get_moves(self):
         element_ptr = POINTER(c_longlong)()
         element_len = c_longlong()
         _generateMoves(self.ctx, pointer(element_ptr), pointer(element_len))
@@ -60,7 +63,7 @@ class GameContext(object):
                   for i in range(element_len.value)]
         return output
 
-    def getTensor(self):
+    def get_tensor(self):
         element_ptr = POINTER(c_double)()
         element_len = c_longlong()
         _convertToTensor(self.ctx, pointer(element_ptr), pointer(element_len))
@@ -68,5 +71,5 @@ class GameContext(object):
         return output
 
     def result(self):
-        # TODO: load result from _wordbot
-        return Result(winner=True)
+        final_score = int(_getFinalScore(self.ctx))
+        return Result(winner=final_score > 0, diff=final_score)

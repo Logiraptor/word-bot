@@ -3,12 +3,9 @@ import tensorflow as tf
 
 
 def live_training(predictor, iterations=1000):
-
     for i in range(iterations):
-        ctx = run_game(predictor)
-        ctx.dump()
-        print(ctx.result())
-
+        run_game(predictor)
+        print("Finished iteration %d / %d" % (i + 1, iterations))
 
 def run_game(predictor):
     move_history = []
@@ -32,11 +29,11 @@ def run_game(predictor):
 
 
 def run_round(ctx, predictor):
-    moves = ctx.getMoves()
+    moves = ctx.get_moves()
     best_score = 0
     best_move = None
     for move in moves:
-        score = predictor.score(move.getTensor())
+        score = predictor.score(move.get_tensor())
         if best_move is None or score > best_score:
             best_score = score
             best_move = move
@@ -44,11 +41,15 @@ def run_round(ctx, predictor):
 
 
 def to_tensor(ctx):
-    return ctx.getTensor()
+    return ctx.get_tensor()
 
 
 # TODO: Machine learning
 class Predictor(object):
+
+    def __init__(self):
+        pass
+
     def score(self, tensor):
         return 0.1
 
@@ -59,4 +60,4 @@ class Predictor(object):
         pass
 
 
-live_training(Predictor(), iterations=1)
+live_training(Predictor(), iterations=10)

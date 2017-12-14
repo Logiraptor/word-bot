@@ -3,7 +3,6 @@ package main
 //#include <stdlib.h>
 import "C"
 import (
-	"fmt"
 	"sync"
 	"unsafe"
 
@@ -28,28 +27,30 @@ func init() {
 }
 
 type GameContext struct {
-	board    *core.Board
-	nextRack core.Rack
-	lastRack core.Rack
-	leave    []core.Tile
-	bag      core.Bag
+	board   *core.Board
+	p1Rack  core.Rack
+	p2Rack  core.Rack
+	p1Score core.Score
+	p2Score core.Score
+	leave   []core.Tile
+	bag     core.Bag
 }
 
-var allCtxs = make(map[int]*GameContext)
+var allContexts = make(map[int]*GameContext)
 var ctxCounter = 0
 var ctxLock sync.RWMutex
 
 func putContext(gc *GameContext) int {
 	ctxLock.Lock()
 	ctxCounter++
-	allCtxs[ctxCounter] = gc
+	allContexts[ctxCounter] = gc
 	ctxLock.Unlock()
 	return ctxCounter
 }
 
 func getContext(ctx int) *GameContext {
 	ctxLock.RLock()
-	context := allCtxs[ctx]
+	context := allContexts[ctx]
 	ctxLock.RUnlock()
 	return context
 }
@@ -62,10 +63,10 @@ func MakeContext() int {
 	firstBag, secondRack := firstBag.FillRack(nil, 7)
 
 	gc := &GameContext{
-		board:    core.NewBoard(),
-		nextRack: core.NewConsumableRack(firstRack),
-		lastRack: core.NewConsumableRack(secondRack),
-		bag:      firstBag,
+		board:  core.NewBoard(),
+		p1Rack: core.NewConsumableRack(firstRack),
+		p2Rack: core.NewConsumableRack(secondRack),
+		bag:    firstBag,
 	}
 	return putContext(gc)
 }
@@ -73,7 +74,7 @@ func MakeContext() int {
 //export FreeContext
 func FreeContext(ctx int) {
 	ctxLock.Lock()
-	delete(allCtxs, ctx)
+	delete(allContexts, ctx)
 	ctxLock.Unlock()
 }
 
@@ -81,9 +82,6 @@ func FreeContext(ctx int) {
 func PrintContext(ctx int) {
 	context := getContext(ctx)
 	context.board.Print()
-	fmt.Println("Next Rack:", core.Tiles2String(context.nextRack.Rack))
-	fmt.Println("Last Rack:", core.Tiles2String(context.lastRack.Rack))
-	fmt.Println("Leave:", core.Tiles2String(context.leave))
 }
 
 //export GenerateMoves
@@ -91,7 +89,7 @@ func GenerateMoves(ctx int, elements **int, numElements *int) {
 	context := getContext(ctx)
 
 	outgoingContexts := make([]int, 0, 10)
-	sm.GenerateMoves(context.board, context.nextRack, func(turn core.Turn) bool {
+	sm.GenerateMoves(context.board, context.p1Rack, func(turn core.Turn) bool {
 		switch v := turn.(type) {
 		case core.ScoredMove:
 			var (
@@ -103,33 +101,34 @@ func GenerateMoves(ctx int, elements **int, numElements *int) {
 			newBoard = context.board.Clone()
 			newBoard.PlaceTiles(v.PlacedTiles)
 
-			newRack, _ = context.nextRack.Play(v.Word)
+			newRack, _ = context.p1Rack.Play(v.Word)
 			leave := newRack.Rack
 			newBag, newRack.Rack = context.bag.FillRack(newRack.Rack, 7-len(newRack.Rack))
 
 			outgoingContexts = append(outgoingContexts, putContext(&GameContext{
-				board:    newBoard,
-				bag:      newBag,
-				nextRack: context.lastRack,
-				lastRack: newRack,
-				leave:    leave,
+				board:   newBoard,
+				bag:     newBag,
+				p1Rack:  context.p2Rack,
+				p2Rack:  newRack,
+				p1Score: context.p2Score,
+				p2Score: context.p1Score + v.Score,
+				leave:   leave,
 			}))
 		case core.Pass:
 			outgoingContexts = append(outgoingContexts, putContext(&GameContext{
-				bag:      context.bag,
-				board:    context.board,
-				nextRack: context.lastRack,
-				lastRack: context.nextRack,
-				leave:    context.nextRack.Rack,
+				bag:     context.bag,
+				board:   context.board,
+				p1Rack:  context.p2Rack,
+				p2Rack:  context.p1Rack,
+				p1Score: context.p2Score,
+				p2Score: context.p1Score,
+				leave:   context.p1Rack.Rack,
 			}))
 		case core.Exchange:
 
 		}
 		return true
 	})
-
-	fmt.Println("Generated", len(outgoingContexts), "Moves")
-	fmt.Println(outgoingContexts)
 
 	*numElements = len(outgoingContexts)
 	elemPtr := C.malloc(C.sizeof_longlong * C.size_t(len(outgoingContexts)))
@@ -176,6 +175,12 @@ func ConvertToTensor(ctx int, output **float64, length *int) {
 	elemSlice := (*[1 << 30]float64)(elemPtr)
 	copy(elemSlice[:], tensor[:])
 	*output = (*float64)(elemPtr)
+}
+
+//export GetFinalScore
+func GetFinalScore(ctx int) int {
+	context := getContext(ctx)
+	return int(context.p2Score - context.p1Score)
 }
 
 //export FreeContextBuffer

@@ -8,3 +8,6 @@ Long running AI DOJO:
 
 Build System:
     Build wordlist into binary for use outside of native code
+    Maybe also in JS. Then the app could run without network requests
+    Performance might be bad though
+
