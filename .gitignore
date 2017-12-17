@@ -25,3 +25,4 @@ __pycache__
 .~*
 .ipynb_checkpoints/
 pip-selfcheck.json
+.idea/workspace.xml
