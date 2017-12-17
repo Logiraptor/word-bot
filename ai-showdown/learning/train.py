@@ -1,31 +1,52 @@
-from game_context import GameContext
-import tensorflow as tf
+import random
 
+from game_context import GameContext
+from predictor import Predictor
+
+Y = 0.85
 
 def live_training(predictor, iterations=1000):
-    for i in range(iterations):
-        run_game(predictor)
-        print("Finished iteration %d / %d" % (i + 1, iterations))
+    """train the given predictor for {iterations} games"""
+    with predictor.session() as session:
+        train_data, train_labels = [], []
+        for i in range(iterations):
+            new_data, new_labels = run_game(session)
+            train_data.extend(new_data)
+            train_labels.extend(new_labels)
+            train_data, train_labels = session.train(train_data, train_labels)
+            print("Finished iteration %d / %d" % (i + 1, iterations))
 
-def run_game(predictor):
+
+def run_game(session):
     move_history = []
 
     ctx = GameContext.make()
     done = False
     while not done:
         move_history.append(ctx)
-        next_ctx = run_round(ctx, predictor)
+        next_ctx = run_round(ctx, session)
         if next_ctx is not None:
             ctx = next_ctx
         else:
             done = True
 
+    move_history.reverse()
     if ctx.result().winner and len(move_history) % 2 == 0:
-        predictor.train_win(map(to_tensor, move_history[::2]))
+        label = 1.0
     else:
-        predictor.train_loss(map(to_tensor, move_history[1::2]))
+        label = -1.0
 
-    return ctx
+    train_data, train_labels = [], []
+    for move in move_history:
+        train_data.append(to_tensor(move))
+        train_labels.append([label])
+        label *= -Y
+
+    shuffled = list(zip(train_data, train_labels))
+    random.shuffle(shuffled)
+    train_data[:], train_labels[:] = zip(*shuffled)
+
+    return [train_data, train_labels]
 
 
 def run_round(ctx, predictor):
@@ -44,20 +65,4 @@ def to_tensor(ctx):
     return ctx.get_tensor()
 
 
-# TODO: Machine learning
-class Predictor(object):
-
-    def __init__(self):
-        pass
-
-    def score(self, tensor):
-        return 0.1
-
-    def train_win(self, tensors):
-        pass
-
-    def train_loss(self, tensors):
-        pass
-
-
-live_training(Predictor(), iterations=10)
+live_training(Predictor(), iterations=10000)
