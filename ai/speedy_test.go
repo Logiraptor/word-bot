@@ -10,7 +10,6 @@ import (
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
-	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/wordlist"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,11 +17,7 @@ import (
 var wordGaddag *wordlist.Gaddag
 
 func init() {
-	wordGaddag = wordlist.NewGaddag()
-	err := definitions.LoadWords("../words.txt", wordGaddag)
-	if err != nil {
-		panic(err)
-	}
+	wordGaddag = wordlist.MakeDefaultWordListGaddag()
 }
 
 func filter(scoredMoves []core.Turn, pred func(core.ScoredMove) bool) []core.ScoredMove {

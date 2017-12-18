@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/web"
 	"github.com/Logiraptor/word-bot/wordlist"
 )
@@ -12,13 +11,7 @@ import (
 var wordDB *wordlist.Trie
 
 func init() {
-	builder := wordlist.NewTrieBuilder(151434)
-	err := definitions.LoadWords("./words.txt", builder)
-	if err != nil {
-		panic(err)
-	}
-
-	wordDB = builder.Build()
+	wordDB = wordlist.MakeDefaultWordList()
 }
 
 func main() {

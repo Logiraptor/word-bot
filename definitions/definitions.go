@@ -3,6 +3,7 @@ package definitions
 import (
 	"bufio"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,13 +23,16 @@ func LoadWords(filename string, db WordDB) error {
 		return err
 	}
 
+	err = LoadDefinitionsReader(f, db)
+	return err
+}
+
+func LoadDefinitionsReader(f io.Reader, db WordDB) error {
 	scanner := bufio.NewScanner(f)
 	scanner.Split(bufio.ScanLines)
-
 	for scanner.Scan() {
 		db.AddWord(scanner.Text())
 	}
-
 	return scanner.Err()
 }
 

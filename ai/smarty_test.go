@@ -5,7 +5,6 @@ import (
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
-	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/wordlist"
 	"github.com/stretchr/testify/assert"
 )
@@ -13,11 +12,7 @@ import (
 var wordDB *wordlist.Trie
 
 func init() {
-	wordDB = wordlist.NewTrie()
-	err := definitions.LoadWords("../words.txt", wordDB)
-	if err != nil {
-		panic(err)
-	}
+	wordDB = wordlist.MakeDefaultWordList()
 }
 
 func TestSmartyMatchesBrute(t *testing.T) {

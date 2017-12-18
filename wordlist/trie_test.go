@@ -3,29 +3,11 @@ package wordlist
 import (
 	"testing"
 
-	"github.com/Logiraptor/word-bot/definitions"
-
 	"github.com/Logiraptor/word-bot/core"
 )
 
-func trashMemory() []int {
-	var x []int
-	for i := 0; i < 1000; i++ {
-		x = make([]int, 10)
-	}
-	return x
-}
-
 func loadWordsDirect() *Trie {
-	wordDB := NewTrie()
-	definitions.LoadWords("../words.txt", wordDB)
-	return wordDB
-}
-
-func loadWordsWithBuilder() *Trie {
-	builder := NewTrieBuilder(151434)
-	definitions.LoadWords("../words.txt", builder)
-	return builder.Build()
+	return MakeDefaultWordList()
 }
 
 var blankA = core.Rune2Letter('a').ToTile(false)
@@ -52,7 +34,7 @@ func TestContainsDirect(t *testing.T) {
 }
 
 func TestContainsBuilder(t *testing.T) {
-	trie := loadWordsWithBuilder()
+	trie := loadWordsDirect()
 
 	if !trie.Contains(core.MakeWord("foot")) {
 		t.Errorf("Trie did not contain foot!")
@@ -71,7 +53,7 @@ func BenchmarkDFSDirect(b *testing.B) {
 }
 
 func BenchmarkDFSBuilder(b *testing.B) {
-	trie := loadWordsWithBuilder()
+	trie := loadWordsDirect()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		dfs(trie)
@@ -86,6 +68,6 @@ func BenchmarkLoadWordsDirect(b *testing.B) {
 
 func BenchmarkLoadWordsWithBuilder(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		loadWordsWithBuilder()
+		loadWordsDirect()
 	}
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
-	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/wordlist"
 )
 
@@ -15,16 +14,8 @@ var wordDB *wordlist.Trie
 var wordGaddag *wordlist.Gaddag
 
 func init() {
-	wordDB = wordlist.NewTrie()
-	wordGaddag = wordlist.NewGaddag()
-	err := definitions.LoadWords("../../words.txt", wordDB)
-	if err != nil {
-		panic(err)
-	}
-	err = definitions.LoadWords("../../words.txt", wordGaddag)
-	if err != nil {
-		panic(err)
-	}
+	wordDB = wordlist.MakeDefaultWordList()
+	wordGaddag = wordlist.MakeDefaultWordListGaddag()
 }
 
 func diff(a, b []core.Turn) []core.Turn {

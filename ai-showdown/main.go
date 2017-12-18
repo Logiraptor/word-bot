@@ -13,7 +13,6 @@ import (
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
-	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/persist"
 	"github.com/Logiraptor/word-bot/wordlist"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
@@ -23,13 +22,7 @@ var wordDB *wordlist.Trie
 var commitHash []byte
 
 func init() {
-	builder := wordlist.NewTrieBuilder(151434)
-	err := definitions.LoadWords("../words.txt", builder)
-	if err != nil {
-		panic(err)
-	}
-
-	wordDB = builder.Build()
+	wordDB = wordlist.MakeDefaultWordList()
 
 	status, err := exec.Command("git", "status").Output()
 	if err != nil {

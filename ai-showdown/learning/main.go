@@ -7,7 +7,6 @@ import (
 	"unsafe"
 
 	"github.com/Logiraptor/word-bot/ai"
-	"github.com/Logiraptor/word-bot/definitions"
 	"github.com/Logiraptor/word-bot/wordlist"
 
 	"github.com/Logiraptor/word-bot/core"
@@ -16,13 +15,7 @@ import (
 var sm *ai.SmartyAI
 
 func init() {
-	builder := wordlist.NewTrieBuilder(151434)
-	err := definitions.LoadWords("../../words.txt", builder)
-	if err != nil {
-		panic(err)
-	}
-
-	wordDB := builder.Build()
+	wordDB := wordlist.MakeDefaultWordList()
 	sm = ai.NewSmartyAI(wordDB, wordDB)
 }
 

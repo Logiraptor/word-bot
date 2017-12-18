@@ -1,8 +1,34 @@
 package wordlist
 
 import (
+	"bytes"
+	"fmt"
+
 	"github.com/Logiraptor/word-bot/core"
+	"github.com/Logiraptor/word-bot/definitions"
 )
+
+//go:generate go-bindata -pkg wordlist -o ./words.go ./words.txt
+
+func MakeDefaultWordList() *Trie {
+	builder := NewTrieBuilder(151434)
+	buf := MustAsset("words.txt")
+	err := definitions.LoadDefinitionsReader(bytes.NewReader(buf), builder)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot load embedded word list file"))
+	}
+	return builder.Build()
+}
+
+func MakeDefaultWordListGaddag() *Gaddag {
+	builder := NewGaddag()
+	buf := MustAsset("words.txt")
+	err := definitions.LoadDefinitionsReader(bytes.NewReader(buf), builder)
+	if err != nil {
+		panic(fmt.Sprintf("Cannot load embedded word list file"))
+	}
+	return builder
+}
 
 type Trie struct {
 	nodes    [26]*Trie
