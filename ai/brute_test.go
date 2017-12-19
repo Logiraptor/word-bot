@@ -112,3 +112,17 @@ func TestPermuteSpotCheck(t *testing.T) {
 	assert.True(t, permContains(perms, core.MakeTiles(core.MakeWord("adds"), "xxxx")))
 	assert.True(t, permContains(perms, core.MakeTiles(core.MakeWord("odds"), " xxx")))
 }
+
+func BenchmarkBrute(b *testing.B) {
+	tiles := core.NewConsumableRack(core.MakeTiles(core.MakeWord("bdhrigs"), "xxxxxx "))
+	board := core.NewBoard()
+	brute := ai.NewBrute(wordDB)
+
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 0, 7, core.Vertical})
+	board.PlaceTiles(core.PlacedTiles{core.MakeTiles(core.MakeWord("aaaaaaaaaaaaaa"), "xxxxxxxxxxxxxxx"), 7, 0, core.Horizontal})
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		brute.GenerateMoves(board, tiles, func(core.Turn) bool { return true })
+	}
+}

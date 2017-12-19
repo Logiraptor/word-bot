@@ -6,7 +6,7 @@ import (
 )
 
 type DB struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func NewDB(filename string) (*DB, error) {
@@ -14,11 +14,17 @@ func NewDB(filename string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	return NewDBConn(db)
+}
 
-	db.AutoMigrate(Game{}, Move{}, LeaveWeight{})
+func NewDBConn(db *gorm.DB) (*DB, error) {
+	err := db.AutoMigrate(Game{}, Move{}, LeaveWeight{}).Error
+	if err != nil {
+		return nil, err
+	}
 
 	return &DB{
-		db: db,
+		DB: db,
 	}, nil
 }
 
@@ -58,16 +64,58 @@ type Move struct {
 }
 
 func (db *DB) SaveGame(g Game) error {
-	return db.db.Create(&g).Error
+	return db.DB.Create(&g).Error
 }
 
 func (db *DB) LoadLeaveWeights() ([]LeaveWeight, error) {
 	var weights []LeaveWeight
-	err := db.db.Find(&weights).Error
+	err := db.DB.Find(&weights).Error
 	if err != nil {
 		return nil, err
 	}
 	return weights, nil
+}
+
+type Matchup struct {
+	Player1, Player2 string
+	NumGames         int
+}
+
+func (db *DB) GetMatchups(matchups []Matchup) (error) {
+	//TODO: this query is returning invalid results.
+	//I need a player id concept
+	rows, err := db.DB.Raw(`
+	WITH
+	game_player_scores AS
+		(SELECT games.id AS game_id, player, SUM(moves.score) AS score
+		FROM games
+		INNER JOIN moves ON moves.game_id = games.id
+		GROUP BY games.id, moves.player)
+	SELECT DISTINCT p1.player AS p1, p2.player AS p2, COUNT(games.id)
+		FROM games
+		INNER JOIN game_player_scores AS p1 ON p1.game_id = games.id
+		INNER JOIN game_player_scores AS p2 ON p2.game_id = games.id
+		GROUP BY p1.player, p2.player
+	`).Rows()
+	if err != nil {
+		return err
+	}
+
+	for rows.Next() {
+		m := Matchup{}
+		err = rows.Scan(&m.Player1, &m.Player2, &m.NumGames)
+		if err != nil {
+			return err
+		}
+
+		for i, other := range matchups {
+			if other.Player1 == m.Player1 && other.Player2 == m.Player2 {
+				matchups[i].NumGames = m.NumGames
+				break
+			}
+		}
+	}
+	return nil
 }
 
 func (db *DB) PrintStats() {
@@ -142,12 +190,12 @@ func (db *DB) PrintStats() {
 	_ = `
 	WITH
 	game_player_scores AS 
-		(SELECT games.id AS game_id, player, SUM(moves.score) as score
+		(SELECT games.id AS game_id, player, SUM(moves.score) AS score
 		FROM games
 		INNER JOIN moves ON moves.game_id = games.id
 		GROUP BY games.id, moves.player),
 	matchups AS
-		(SELECT games.id as game_id, p1.player as p1, p2.player as p2, p1.score - p2.score as diff, p1.score > p2.score as win
+		(SELECT games.id AS game_id, p1.player AS p1, p2.player AS p2, p1.score - p2.score AS diff, p1.score > p2.score AS win
 		FROM games
 		INNER JOIN game_player_scores AS p1 ON p1.game_id = games.id
 		INNER JOIN game_player_scores AS p2 ON p2.game_id = games.id AND p1.player < p2.player)
