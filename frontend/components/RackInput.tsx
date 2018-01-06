@@ -73,6 +73,7 @@ export class RackInput extends React.Component<Props> {
                         case 40:
                             this.props.onMove(1, 0);
                             break;
+                        case 192:
                         case 46:
                             this.props.onDelete();
                             break;
