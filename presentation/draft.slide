@@ -1,0 +1,167 @@
+Automating Scrabble with Go
+Patrick Oyarzun
+
+* Me
+
+- 4 years production Go experience (pre-Pivotal)
+- Still writing Go almost daily on the side
+- Really bad at Scrabble
+
+* Challenger
+
+- Anthropology PhD candidate
+- National medical spelling bee finalist
+- (Married to me)
+- Really good at Scrabble
+
+: This is words like narcoanesthesia or sacroposterior
+: What do you do when your spouse is better than you at something?
+: Build a robot to play for you and make yourself feel better
+
+* Go
+
+"Go is an open source programming language that makes it easy to build simple, reliable, and efficient software."
+
+    package main
+
+    import "fmt"
+
+    func main() {
+    	fmt.Println("Hello, 世界")
+    }
+
+* Prior work
+
+A.W. Appel, G.J. Jacobson
+*The*world's*fastest*Scrabble*program*
+Comm. ACM, 31 (5) (1988), pp. 572-578
+
+S.A. Gordon
+*A*faster*Scrabble*move*generation*algorithm*
+Software Practice and Experience, 24 (2) (1994), pp. 219-232
+
+Brian Sheppard
+*World-championship-caliber*Scrabble*
+Artificial Intelligence, Volume 134, Issues 1–2, January 2002, Pages 241-275
+
+* AI Components
+
+- Game Logic
+- Move Generation
+- Move Selection
+
+* Game Logic
+
+* Primitive Types
+
+.code ../core/tile.go /\/\/ Letter/,/Letter int/
+.code ../core/board.go /\/\/ Direction/,/Direction bool/
+.code ../core/board.go /\/\/ Score/,/\[\]Letter/
+
+* Methods
+
+.code ../core/tile.go /\/\/ Tile/,/Tile int/
+.code ../core/tile.go /\/\/ PointValue/,/^}/
+
+* Compound Types
+
+.code ../core/board.go /\/\/ PlacedTiles/,/^}/
+.code ../core/board.go /\/\/ Cell/,/^}/
+.code ../core/board.go /\/\/ Board/,/^}/
+
+* Core Scrabble Domain
+
+.code ../core/board.go /func \(b \*Board\) ValidateMove[^{]+/
+.code ../core/board.go /func \(b \*Board\) Score[^{]+/
+.code ../core/board.go /func \(b \*Board\) PlaceTiles[^{]+/
+
+* Board Printing
+
+.code ../core/board.go /\/\/ Print/,/^}/
+
+* Hello, World!
+
+.play ./code/hello_world.go
+
+* Hello, World!
+
+.image images/hello-world.png _ 700
+
+Sept. 9, 2017
+
+* Move Generation
+
+* Artificial "Intelligence"
+
+.code ../ai/brute.go /func BruteForce/,/^}/
+
+* It's Alive!
+
+.image images/working-move-gen.png _ 500
+
+Sept. 10, 2017
+
+* We can do better (Parallel Search)
+
+.code ./code/smarty.go /func workerPool/,/^}/
+
+- 1 goroutine to queue a job per cell
+- N worker goroutines to dequeue jobs and send results back
+- Communication over channels with main goroutine
+
+* We can do better (Parallel Search)
+
+.code ./code/smarty.go /func enqueueJobs/,/^}/
+
+* We can do better (Parallel Search)
+
+.code ./code/smarty.go /func consumeJobs/,/^}/
+
+* We can do better (Incremental search)
+
+- GADDAG data structure for incremental word building
+- Validate 'cross-words' incrementally
+- Consume rack tiles incrementally
+- This enables early-exit in many cases
+
+* Performance Benchmarks
+
+.image ./images/benchmarks.png _ 900
+
+* Game Performance
+
+.image images/chart.png
+
+* Let's make an API
+
+    func (s Server) ValidateEndpoint(rw http.ResponseWriter, req *http.Request) {
+    	var moves MoveRequest
+    	err := json.NewDecoder(req.Body).Decode(&moves)
+    	if err != nil {
+    		http.Error(rw, "JSON parsing failed: "+err.Error(), http.StatusBadRequest)
+    		return
+    	}
+
+    	output := s.Validate(moves)
+    	json.NewEncoder(rw).Encode(output)
+    }
+
+* Final product
+
+.image images/final-product.png _ 500
+
+Jan. 6, 2018
+
+* Other Go features I didn't talk about
+
+- Gofmt
+- Structural interface satisfaction
+- ~100μs garbage collector pauses
+- Predictable stack / heap allocation
+- Backwards compatibility promise
+- Excellent profiling tools
+- Built in test runner
+- Multiple return values
+- Defer keyword
+- *No*classes,*generics,*operator*overloading,*macros,*or*pointer*arithmetic*
+

@@ -63,9 +63,7 @@ func (s *SmartyAI) FindMove(b *core.Board, bag core.Bag, rack core.Rack, callbac
 
 func (s *SmartyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(core.Turn) bool) {
 	var wg = new(sync.WaitGroup)
-
 	dirs := []core.Direction{core.Horizontal, core.Vertical}
-
 	results := make(chan core.PlacedTiles, 10)
 
 	go func() {
@@ -77,14 +75,9 @@ func (s *SmartyAI) GenerateMoves(b *core.Board, rack core.Rack, callback func(co
 				for _, dir := range dirs {
 					wg.Add(1)
 					s.jobs <- job{
-						board:      b,
-						i:          i,
-						j:          j,
-						dir:        dir,
-						rack:       rack,
-						resultChan: results,
-						wg:         wg,
-						wordDB:     s.searchSpace,
+						board: b, i: i, j: j, dir: dir,
+						rack:  rack, resultChan: results,
+						wg:    wg, wordDB: s.searchSpace,
 					}
 				}
 			}
@@ -209,7 +202,7 @@ func (s *SmartyAI) validateCrossWord(board *core.Board, i, j int, placed core.Ti
 	var (
 		ok                 bool
 		perpDRow, perpDCol = dir.Offsets()
-		perpI, perpJ       = i - perpDRow, j - perpDCol
+		perpI, perpJ       = i-perpDRow, j-perpDCol
 	)
 
 	if !board.HasTile(i+perpDRow, j+perpDCol) && !board.HasTile(i-perpDRow, j-perpDCol) {

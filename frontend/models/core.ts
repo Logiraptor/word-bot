@@ -8,7 +8,7 @@ export interface Tile {
     Letter: string;
     Blank: boolean;
     Value: number;
-    Bonus: string;
+    Bonus: 'DW' | 'TW' | 'TL' | 'DL' | '';
     Flags: TileFlag[] | null;
 }
 

@@ -356,32 +356,35 @@ func (b *Board) NormalizeMove(move PlacedTiles) PlacedTiles {
 func (b *Board) Print() {
 	for i, row := range b.Cells {
 		for j, cell := range row {
-			_, _ = i, j
-
 			letter := " "
 			cellColor := color.New(color.FgBlack)
 			if b.HasTile(i, j) {
 				letter = cell.Tile.String()
 				cellColor = cellColor.Add(color.BgMagenta)
 			} else {
-				switch cell.Bonus {
-				case DoubleWord:
-					cellColor = cellColor.Add(color.BgCyan)
-				case TripleWord:
-					cellColor = cellColor.Add(color.BgRed)
-				case DoubleLetter:
-					cellColor = cellColor.Add(color.BgBlue)
-				case TripleLetter:
-					cellColor = cellColor.Add(color.BgGreen)
-				case None:
-					cellColor = cellColor.Add(color.BgWhite)
-				}
+				cellColor = addBonusColor(cell, cellColor)
 			}
 
 			cellColor.Printf(" %s ", letter)
 		}
 		fmt.Println()
 	}
+}
+
+func addBonusColor(cell Cell, cellColor *color.Color) *color.Color {
+	switch cell.Bonus {
+	case DoubleWord:
+		cellColor = cellColor.Add(color.BgCyan)
+	case TripleWord:
+		cellColor = cellColor.Add(color.BgRed)
+	case DoubleLetter:
+		cellColor = cellColor.Add(color.BgBlue)
+	case TripleLetter:
+		cellColor = cellColor.Add(color.BgGreen)
+	case None:
+		cellColor = cellColor.Add(color.BgWhite)
+	}
+	return cellColor
 }
 
 func (b *Board) scan(letters []Tile, row, col, dRow, dCol int) []Tile {
