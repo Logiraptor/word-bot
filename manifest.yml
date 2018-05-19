@@ -1,7 +1,7 @@
 ---
 applications:
-  - name: word-bot
+  - name: word-bot-prod
     buildpack: https://github.com/cloudfoundry/go-buildpack
     env:
       GOPACKAGENAME: main
-      GOVERSION: go1.9
+      GOVERSION: go1.10
