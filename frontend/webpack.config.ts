@@ -32,7 +32,7 @@ const config: webpack.Configuration = {
             },
         ],
     },
-    plugins: [ new HtmlWebpackPlugin(), new ExtractTextPlugin("style.css") ],
+    plugins: [ new ExtractTextPlugin("style.css"), new HtmlWebpackPlugin() ],
 };
 
 export default config;

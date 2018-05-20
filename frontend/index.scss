@@ -49,10 +49,17 @@ body {
     box-sizing: border-box;
 }
 
+.app {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas: "board sidebar";
+}
+
 .board {
     font-size: calc((100vh - 6em) / 35);
-    margin: auto;
     width: 2.35em * 15;
+    margin: auto;
 }
 
 .space.DW {
@@ -158,11 +165,7 @@ body {
 }
 
 .right-panel {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 25em;
-    height: 100%;
+    grid-area: sidebar;
     background-color: $widget-fill;
 }
 
