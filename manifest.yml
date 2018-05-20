@@ -1,7 +1,6 @@
 ---
 applications:
   - name: word-bot
-    buildpack: https://github.com/cloudfoundry/go-buildpack
     env:
       GOPACKAGENAME: main
       GOVERSION: go1.10
