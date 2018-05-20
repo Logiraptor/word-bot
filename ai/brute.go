@@ -8,8 +8,20 @@ type BruteForceGenerator struct {
 	wordDB core.WordList
 }
 
+var _ AI = BruteForceGenerator{}
+
 func NewBrute(wordDB core.WordList) BruteForceGenerator {
 	return BruteForceGenerator{wordDB}
+}
+
+func (b BruteForceGenerator) FindMove(board *core.Board, bag core.Bag, rack core.Rack, onMove func(core.Turn) bool) {
+	b.GenerateMoves(board, rack, func(turn core.Turn) bool {
+		return onMove(turn)
+	})
+}
+
+func (b BruteForceGenerator) Name() string {
+	return "brute"
 }
 
 func (b BruteForceGenerator) GenerateMoves(board *core.Board, rack core.Rack, onMove func(core.Turn) bool) {

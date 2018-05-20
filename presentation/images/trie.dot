@@ -1,0 +1,21 @@
+digraph Trie {
+    blank [label=" "];
+    c [label="c"];
+    a [label="a"];
+    r [label="r"];
+    end [label="end"];
+    b2 [label="b"];
+    a2 [label="a"];
+    r2 [label="r"];
+    end2 [label="end"];
+
+    blank->c;
+    c->a;
+    a->r;
+    r -> end;
+
+    blank->b2;
+    b2->a2;
+    a2->r2;
+    r2 -> end2;
+}

@@ -4,34 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/fatih/color"
 )
-
-var allocCount = 0
-var freeCount = 0
-
-var tileSlices = sync.Pool{
-	New: func() interface{} {
-		return []Tile{}
-	},
-}
-
-func newTileSlice() []Tile {
-	slice := tileSlices.Get().([]Tile)
-	allocCount++
-	if (allocCount-freeCount)%1e6 == 0 {
-		fmt.Println(allocCount - freeCount)
-	}
-	return slice[:0]
-}
-
-func recycleTileSlice(tiles []Tile) {
-	freeCount++
-
-	tileSlices.Put(tiles)
-}
 
 // WordList is used to validate words
 type WordList interface {
@@ -104,6 +79,7 @@ type Cell struct {
 // Board is a regular scrabble board
 type Board struct {
 	Cells [15][15]Cell
+	ValidatedMoves []PlacedTiles
 }
 
 // NewBoard initializes an empty board
@@ -115,6 +91,7 @@ func NewBoard() *Board {
 			b.Cells[i][j].Bonus = normalBonus[i][j]
 		}
 	}
+	b.ValidatedMoves = []PlacedTiles{}
 	return b
 }
 
@@ -148,7 +125,7 @@ func (b *Board) HasTile(row, col int) bool {
 
 // ValidateMove returns true if the given move is legal
 func (b *Board) ValidateMove(move PlacedTiles, wordList WordList) bool {
-
+	b.ValidatedMoves = append(b.ValidatedMoves, move)
 	// Check that it connects to other words
 	connectsToOtherWords := false
 	dRow, dCol := move.Direction.Offsets()

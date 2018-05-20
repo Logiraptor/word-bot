@@ -1,0 +1,46 @@
+digraph Gaddag {
+    flip [label = "#"];
+    flip1 [label = "#"];
+    flip2 [label = "#"];
+    end [label = "end"];
+    end2 [label = "end"];
+    end3 [label = "end"];
+    end4 [label = "end"];
+    end5 [label = "end"];
+
+    a2 [label = "a"];
+    r2 [label = "r"];
+    c2 [label = "c"];
+    b2 [label = "b"];
+
+    a3 [label = "a"];
+    r3 [label = "r"];
+    c3 [label = "c"];
+    b3 [label = "b"];
+
+    blank [label = " "];
+    blank -> c;
+    c -> a;
+
+    blank -> b;
+    b -> a;
+    a -> r;
+    r -> flip1;
+    flip1 -> end;
+
+    blank -> a2;
+    a2 -> r2;
+    r2 -> flip;
+    flip -> b2;
+    flip -> c2;
+    b2 -> end2;
+    c2 -> end3;
+
+    blank -> r3;
+    r3 -> flip2;
+    flip2 -> a3;
+    a3 -> b3;
+    a3 -> c3;
+    b3 -> end4;
+    c3 -> end5;
+}

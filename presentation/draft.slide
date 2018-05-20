@@ -1,4 +1,6 @@
 Automating Scrabble with Go
+https://word-bot.pcfbeta.io/
+
 Patrick Oyarzun
 
 * Me
@@ -81,7 +83,7 @@ Artificial Intelligence, Volume 134, Issues 1–2, January 2002, Pages 241-275
 
 * Hello, World!
 
-.play ./code/hello_world.go
+.code ./code/hello_world.go
 
 * Hello, World!
 
@@ -101,28 +103,49 @@ Sept. 9, 2017
 
 Sept. 10, 2017
 
-* We can do better (Parallel Search)
+* Brute force iteration
 
-.code ./code/smarty.go /func workerPool/,/^}/
+.code ./code/show-brute-moves.go
+
+* Incremental rack consumption
+
+
+
+* Trie
+
+.image ./images/trie.png
+
+Set contains in O(len(input))
+
+* DAWG
+
+.image ./images/dawg.png
+
+Trie but with better performance
+
+* GADDAG
+
+.image ./images/gaddag.png
+
+Forward and backward iteration
+
+* Parallel Search
 
 - 1 goroutine to queue a job per cell
 - N worker goroutines to dequeue jobs and send results back
 - Communication over channels with main goroutine
 
-* We can do better (Parallel Search)
+* Parallel Search
+
+.code ./code/smarty.go /func workerPool/,/^}/
+
+* Parallel Search
 
 .code ./code/smarty.go /func enqueueJobs/,/^}/
 
-* We can do better (Parallel Search)
+* Parallel Search
 
 .code ./code/smarty.go /func consumeJobs/,/^}/
-
-* We can do better (Incremental search)
-
-- GADDAG data structure for incremental word building
-- Validate 'cross-words' incrementally
-- Consume rack tiles incrementally
-- This enables early-exit in many cases
 
 * Performance Benchmarks
 
