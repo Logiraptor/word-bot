@@ -2,20 +2,24 @@ language: go
 go:
 - '1.10'
 before_deploy:
-  - go get github.com/gopherjs/gopherjs
-  - go install github.com/gopherjs/gopherjs
-  - go get github.com/kardianos/govendor
-  - govendor init
-  - govendor add +external
-  - govendor add +local
-  - govendor remove github.com/gopherjs/...
-  - pushd frontend/
-  - yarn
-  - yarn build
-  - popd
+- go get github.com/gopherjs/gopherjs
+- go install github.com/gopherjs/gopherjs
+- go get github.com/kardianos/govendor
+- govendor init
+- govendor add +external
+- govendor add +local
+- govendor remove github.com/gopherjs/...
+- pushd frontend/
+- yarn
+- yarn build
+- popd
 deploy:
-  provider: heroku
-  on: master
-  skip_cleanup: true
-  api_key:
-    secure: Frb4BNbe5w9cdZTVIFJDRxcAZBkITO86jfLOqsFCF6ZKftigsM6vvhmh1yA5/nsiu2O6CvbNtKJo/r+iQDT0/j/gZhR8VbGA9OSYDIe3C/WKcGHMGPAkRZQ3LaiRVWRUKUZ3stGq/m2GbTnQzSf6HZJHfHkzdVne/46eFj/cLA+GbsJqBCbHtjlUUSO4SwF3Ec2XXy9P4rV1XA6Cj9JkZzAYVslMsKfjyKF16GMZZYmFvFqb8CwctqTlhpXerc/t/kzlO6nPqGiyheucjZAAv545iOObnBm4yqoX0tlGncxS2kyfBWvszYT+zRd0EE9ozm5OZTXqkn0PNYcJ9vVizciKJ7edL2ENjHOivOPq9HTaYWrCIImGXNozqUru0dr9ta7GNFhYdpxjxJSi8qyDfH/zXXm7GUo+gwnsi5twPV52IfjKdVhtVdjB8HA7BiSV9bCCFHBApwYLp7LF9DqBPTWvxt4YAh2zrpyC9R94NIjDJRkRQL0lvhmJDh2yK6saTiSV8hC7Y9qc6KQ4+9ZxjUjg/1nejYTi/seHWkzBd3bmqn3qEHjguewvqkeYYcCF0/zyC5gbjolXoPyle3ZWxpCAMZmze7ptHGJrczgCvLjojIMFX+Glckz21k8+KjffPP1zCDC7odDzYhu+tzEHTJ/eZ8qWA5jSuTt2SPtrFcw=
+  provider: cloudfoundry
+  api: api.run.pcfbeta.io
+  username: poyarzun-ci
+  password:
+    secure: YmPh2V+CykXKx9IMPbaorx5b0YREB1hAYDSdBUqT6nEkm4ImFinF9PfxktaKjpFQKivxfx6nQwxrmRjVO6wkQWDbLKcUlCzcv2TXwXtulFf7+eAkaytsphUA+cYua1lYAJfzH/3BM8j1lEu76NOPq+6g6QJJq4RwaVYcjwywHfJHzDYzN9DHTieeUpLB8KjQ4XiGYB6agbWKCPb2nC9Ri6cP1Svol58bWYkHXR8JX7rGkHh+B4q2jvTvFENbcesdD+DlQevb1FVkAk/hOHQ7zOTsAt5rJy6l99IEJ0H36nXnzmOkL0hD6puE6TZWjyhqF7JPfqSvnPqqTUmBKYecgYFb6XvFQZ+aIo12ynUK/TEv4qfzQUuruuMEmgNtfU4cgDvEolvTxT1y4cTgbnja+f/CLzXQv82xOS8R+is8NsstZSC+BBTCCETwHujfuWAJ0R9+f4EM8YW22NJyxEvqY3PjqdyBBT/LRQhsuHwQUFp+vVQ1cP7cdnlst8OocsvLY1Rz2oDaw/t0pHLqkcvVuAWocNO54zSEEGKZ7cFSAWuqhWVCots7iLbOyHWocJe6U/nDbzqNmg9ozjdlMevcZZX56woL5JmfkhSOXhH+UtqRhEHX21z/UDYP6IvkVNgERp+UXHHMswKUBmoOEJo0GyGb03kMBISQEEy1/kto0xY=
+  organization: pivot-poyarzun
+  space: development
+  on:
+    repo: Logiraptor/word-bot
