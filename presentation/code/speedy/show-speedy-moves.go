@@ -1,5 +1,5 @@
 
-package main
+package speedy
 
 import (
 	"github.com/Logiraptor/word-bot/ai"
@@ -9,5 +9,6 @@ import (
 
 func main() {
 	wordList := wordlist.MakeDefaultWordList()
-	suggestions.PrintSuggestions(ai.NewSmartyAI(wordList, wordList))
+	gaddag := wordlist.MakeDefaultWordListGaddag()
+	suggestions.PrintSuggestions(ai.NewSpeedyAI(wordList, gaddag))
 }
