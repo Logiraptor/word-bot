@@ -35,18 +35,18 @@ func (b BruteForceGenerator) GenerateMoves(board *core.Board, rack core.Rack, on
 
 func BruteForce(b *core.Board, rack core.Rack, wordDB core.WordList, callback func(core.Turn)) {
 	dirs := []core.Direction{core.Horizontal, core.Vertical}
-	perms := Permute(rack.Rack)
-	for i := 0; i < 15; i++ {
+	perms := Permute(rack.Rack) // allocating a bunch of unnecessary memory
+	for i := 0; i < 15; i++ { // bunch of unrelated work happening serially
 		for j := 0; j < 15; j++ {
 			if b.HasTile(i, j) {
-				continue
+				continue // skipping used spaces (the minority of spaces)
 			}
 
 			for _, dir := range dirs {
 				for _, p := range perms {
 
 					pt := core.PlacedTiles{Word: p, Row: i, Col: j, Direction: dir}
-					if b.ValidateMove(pt, wordDB) {
+					if b.ValidateMove(pt, wordDB) { // no information is kept across iterations
 						_, canPlay := rack.Play(p)
 						if canPlay {
 							callback(core.ScoredMove{

@@ -144,10 +144,6 @@ body {
 }
 
 .player-rack {
-    width: 100%;
-    position: absolute;
-    bottom: 0px;
-    // height: 2.4em;
     background-color: nth($primary, 1);
 
     .rack {

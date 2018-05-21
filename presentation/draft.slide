@@ -20,17 +20,22 @@ Patrick Oyarzun
 : What do you do when your spouse is better than you at something?
 : Build a robot to play for you and make yourself feel better
 
-* Go
+* Scrabble Bot
 
-"Go is an open source programming language that makes it easy to build simple, reliable, and efficient software."
-
-    package main
-
-    import "fmt"
-
-    func main() {
-    	fmt.Println("Hello, 世界")
-    }
+- Game logic
+: Game Logic
+: is move XYZ valid
+: if so, how many points is it worth?
+: this is just a bunch of hand rolled code with lots of unit tests
+- Move generation
+: Move generation
+: what moves are available given a certain board / rack?
+: most of the time is spent here
+: We'll focus on this bit for the discussion
+- Move selection
+: Move selection
+: which move is 'best'
+: for this ai, it's just a greedy approach
 
 * Prior work
 
@@ -46,11 +51,90 @@ Brian Sheppard
 *World-championship-caliber*Scrabble*
 Artificial Intelligence, Volume 134, Issues 1–2, January 2002, Pages 241-275
 
-* AI Components
+* Go
 
-- Game Logic
-- Move Generation
-- Move Selection
+"Go is an open source programming language that makes it easy to build simple, reliable, and efficient software."
+
+    package main
+
+    import "fmt"
+
+    func main() {
+    	fmt.Println("Hello, 世界")
+    }
+
+* Move generation
+
+Given:
+
+- Tiles on the board
+- Tiles on the rack
+- A dictionary of valid words
+
+Find:
+
+- All valid moves as quickly as possible
+
+* Brute force attempt
+
+For each cell on the board,
+For each possible arrangement of rack tiles,
+Both up and down,
+Check if that placement is valid
+
+* Brute force performance
+
+13,699 rack arrangements * 15 * 15 * 2 = 6,164,550 checks! (~4 seconds)
+With 1 blank tile: 138,273,300 checks (~3 minutes)
+2 blank tiles: 3,114,382,050 checks (~way too long)
+
+We need to go faster
+
+* Constraints
+
+- Dictionary: what letters can be placed adjacent to form a word
+- Board: what 'cross-words' can be played off existing tiles
+- Rack: what tiles are available on the rack
+- A faster implementation could make use of more information to prune the search space.
+
+* Dictionary representation
+
+.image ./images/gaddag.png _ 400
+
+GADDAG for the words 'car' and 'bar'
+
+: We can traverse the tree as we iterate over board cells
+: in order to keep track of what letters are valid at any point
+: The backward encoding is key to enabling us to use 'anchor-tiles'
+
+* Rack implementation
+
+While iterating over cells, we need to efficiently track which rack tiles
+are used and which aren't. The implementation here is a slice of tiles plus
+a 7-bitmask to track which are available.
+
+Bitmasks are fast to query and copy.
+
+* Parallel Search
+
+Each anchor cell is searched in parallel with the others.
+A coordinator routine waits for all jobs to complete before moving on.
+
+* Parallel Search
+
+.code ./code/smarty.go /func workerPool/,/^}/
+
+* Parallel Search
+
+.code ./code/smarty.go /func enqueueJobs/,/^}/
+
+* Parallel Search
+
+.code ./code/smarty.go /func consumeJobs/,/^}/
+
+* Performance Benchmarks
+
+.image ./images/benchmarks.png _ 900
 
 * Game Logic
 
@@ -106,50 +190,6 @@ Sept. 10, 2017
 * Brute force iteration
 
 .code ./code/show-brute-moves.go
-
-* Incremental rack consumption
-
-
-
-* Trie
-
-.image ./images/trie.png
-
-Set contains in O(len(input))
-
-* DAWG
-
-.image ./images/dawg.png
-
-Trie but with better performance
-
-* GADDAG
-
-.image ./images/gaddag.png
-
-Forward and backward iteration
-
-* Parallel Search
-
-- 1 goroutine to queue a job per cell
-- N worker goroutines to dequeue jobs and send results back
-- Communication over channels with main goroutine
-
-* Parallel Search
-
-.code ./code/smarty.go /func workerPool/,/^}/
-
-* Parallel Search
-
-.code ./code/smarty.go /func enqueueJobs/,/^}/
-
-* Parallel Search
-
-.code ./code/smarty.go /func consumeJobs/,/^}/
-
-* Performance Benchmarks
-
-.image ./images/benchmarks.png _ 900
 
 * Game Performance
 
