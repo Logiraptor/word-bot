@@ -1,5 +1,5 @@
-Automating Scrabble with Go
-https://word-bot.pcfbeta.io/
+Go
+or: How to win at Scrabble
 
 Patrick Oyarzun
 
@@ -86,6 +86,10 @@ For each possible arrangement of rack tiles,
 Both up and down,
 Check if that placement is valid
 
+* Game Performance
+
+.image images/chart.png
+
 * Brute force performance
 
 13,699 rack arrangements * 15 * 15 * 2 = 6,164,550 checks! (~4 seconds)
@@ -124,18 +128,6 @@ Bitmasks are fast to query and copy.
 Each anchor cell is searched in parallel with the others.
 A coordinator routine waits for all jobs to complete before moving on.
 
-* Parallel Search
-
-.code ./code/smarty.go /func workerPool/,/^}/
-
-* Parallel Search
-
-.code ./code/smarty.go /func enqueueJobs/,/^}/
-
-* Parallel Search
-
-.code ./code/smarty.go /func consumeJobs/,/^}/
-
 * Performance Benchmarks
 
 .image ./images/benchmarks.png _ 900
@@ -165,41 +157,21 @@ A coordinator routine waits for all jobs to complete before moving on.
 .code ../core/board.go /func \(b \*Board\) Score[^{]+/
 .code ../core/board.go /func \(b \*Board\) PlaceTiles[^{]+/
 
-* Board Printing
+* Parallel Search
 
-.code ../core/board.go /\/\/ Print/,/^}/
+.code ./code/smarty.go /func workerPool/,/^}/
 
-* Hello, World!
+* Parallel Search
 
-.code ./code/hello_world.go
+.code ./code/smarty.go /func enqueueJobs/,/^}/
 
-* Hello, World!
+* Parallel Search
 
-.image images/hello-world.png _ 700
-
-Sept. 9, 2017
+.code ./code/smarty.go /func consumeJobs/,/^}/
 
 * Move Generation
 
-* Artificial "Intelligence"
-
-.code ../ai/brute.go /func BruteForce/,/^}/
-
-* It's Alive!
-
-.image images/working-move-gen.png _ 500
-
-Sept. 10, 2017
-
-* Brute force iteration
-
-.code ./code/show-brute-moves.go
-
-* Game Performance
-
-.image images/chart.png
-
-* Let's make an API
+* HTTP in Go
 
     func (s Server) ValidateEndpoint(rw http.ResponseWriter, req *http.Request) {
     	var moves MoveRequest
