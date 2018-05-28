@@ -10,6 +10,7 @@ import (
 
 func PrintSuggestions(player ai.AI) {
 	b := core.NewBoard()
+	b.StoreValidatedMoves = true
 	b.PlaceTiles(core.PlacedTiles{
 		Col:  7, Row: 7, Direction: core.Horizontal,
 		Word: core.MakeTiles(core.MakeWord("hello"), "xxxxx"),

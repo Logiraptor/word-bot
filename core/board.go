@@ -79,6 +79,7 @@ type Cell struct {
 // Board is a regular scrabble board
 type Board struct {
 	Cells [15][15]Cell
+	StoreValidatedMoves bool
 	ValidatedMoves []PlacedTiles
 }
 
@@ -125,7 +126,9 @@ func (b *Board) HasTile(row, col int) bool {
 
 // ValidateMove returns true if the given move is legal
 func (b *Board) ValidateMove(move PlacedTiles, wordList WordList) bool {
-	b.ValidatedMoves = append(b.ValidatedMoves, move)
+	if b.StoreValidatedMoves {
+		b.ValidatedMoves = append(b.ValidatedMoves, move)
+	}
 	// Check that it connects to other words
 	connectsToOtherWords := false
 	dRow, dCol := move.Direction.Offsets()

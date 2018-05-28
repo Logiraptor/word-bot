@@ -1,4 +1,4 @@
-package brute
+package main
 
 import (
 	"github.com/Logiraptor/word-bot/ai"

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Logiraptor/word-bot/ai"
 	"github.com/Logiraptor/word-bot/core"
@@ -12,17 +13,24 @@ import (
 var wordDB = wordlist.MakeDefaultWordList()
 
 func main() {
-	defer profile.Start(profile.TraceProfile).Stop()
-	g := ai.PlayGame(wordDB, p1, p2)
-	for _, move := range g.Moves {
-		fmt.Println(move.Score, move.Player, move.Tiles)
+	defer profile.Start(profile.CPUProfile).Stop()
+	start := time.Now()
+	for time.Since(start) < time.Second*10 {
+		g := ai.PlayGame(wordDB, speedy, speedy)
+		for _, move := range g.Moves {
+			fmt.Println(move.Score, move.Player, move.Tiles)
+		}
 	}
 }
 
-func p2(board *core.Board) *ai.Player {
+func smarty(board *core.Board) *ai.Player {
 	return ai.NewPlayer(ai.NewSmartyAI(wordDB, wordDB))
 }
 
-func p1(board *core.Board) *ai.Player {
+func speedy(board *core.Board) *ai.Player {
 	return ai.NewPlayer(ai.NewSmartyAI(wordDB, wordDB))
+}
+
+func brute(board *core.Board) *ai.Player {
+	return ai.NewPlayer(ai.NewBrute(wordDB))
 }
