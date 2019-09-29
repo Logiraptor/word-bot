@@ -15,11 +15,11 @@ before_deploy:
 - popd
 deploy:
   provider: cloudfoundry
-  api: api.run.pcfone.io
+  api: api.run.pivotal.io
   username: ci@poyarzun.io
   password:
     secure: JsHJVyuMuflBdOjgagexVn0zldbVNTtdYU1dXc/Ay8w5PMuNmy2H5wb5YwaaPEuVFEBb4jkNUVNbT0Q21/O7jm8NiFKod8gZiYktGWDOXX1Yz8DJXynE3hs1cO473Nz7OGKlyFP7lzQprLKcGm+0ykmssO6exT5Gti/dL1yv8hLKs5a6GUVDVo/KtN2fqavG8HUaS02FaSfJM20RYdxM9u52SpWMihIJ7FvPdbJapj3IU3dzi2KBQHepBeUMKl8k4F2+QtIKwziFqauF1CyAV5SaxlcCFlSRoKqYYexZceXVIW1uAW34lFMTo1TuYHQmRzhOPtXXlW8oeBwrIYjbnxs9PS+bBpJzI99oNnkecxSrMFwSISWuy90xp62aFFZW4V8b3P4asD2mOlcMFlyLCu0tXT/PIZ7m9n82dSK/1nGTgNEH21uqtWl1wavx2gvbhGQ4Rn1Ykc/KT9pYGwf1Pk0m8gOotLX3ejrkYtyveDhl4wKrblavR4TGTKZ0JThep2QKqcLD/JdEMynfqqsjOgtFKVZRuLxrRTZklVlfSyLqH/LWPHxBxKsGsSZ7iRWe1yVUj7cxzaG1GUHSdol1OkJfxXzdvL+BvbpVS9lrJH0w/Zg43pbCf3KcpA8Y4k0q4YoVFpWDc55Cw0i+1AIWwW0V1AdO2QCUwZ3WtyW8YXY=
-  organization: pivot-poyarzun
-  space: playground
+  organization: poyarzun-org
+  space: production
   on:
     repo: Logiraptor/word-bot
