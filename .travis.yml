@@ -1,6 +1,6 @@
 language: go
 go:
-- '1.11'
+- '1.12'
 before_deploy:
 - go get github.com/gopherjs/gopherjs
 - go install github.com/gopherjs/gopherjs
