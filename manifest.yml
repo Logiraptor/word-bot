@@ -3,4 +3,4 @@ applications:
   - name: word-bot
     env:
       GOPACKAGENAME: main
-      GOVERSION: go1.10
+      GOVERSION: go1.12
